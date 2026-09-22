@@ -1,0 +1,184 @@
+{
+  "product": "Bespeak",
+  "tagline": "Condition-aware standing orders for tokenized stocks on X Layer.",
+  "network": "X Layer mainnet",
+  "chainId": 196,
+  "participation": "Remote Build",
+  "primaryTrack": "Build a Market",
+  "generatedAt": "2026-09-22T21:23:45.825323Z",
+  "commit": "8fd3dec2cf30f7ebfd8d12994bbbb0ba9a1b4c3f",
+  "_status": "PRE-DEPLOYMENT. Fields that are null are not yet true and must not be quoted as if they were.",
+  "contracts": {
+    "_status": "not yet deployed to mainnet; deploy verified on an X Layer fork",
+    "assetRegistry": null,
+    "routerRegistry": null,
+    "orderManager": null,
+    "vaultFactory": null,
+    "executionAdapter": null,
+    "conditionVerifier": null
+  },
+  "supportedAssets": [
+    {
+      "symbol": "AAPLx",
+      "underlyingSymbol": "AAPL",
+      "underlying": "0x9d275685dC284C8eB1C79f6ABA7a63Dc75ec890a",
+      "wrapper": "0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "AMDx",
+      "underlyingSymbol": "AMD",
+      "underlying": "0x3522513E5F146a2006e2901b05f16B2821485E19",
+      "wrapper": "0xEe7CcB0d37A12862e7f92F6C92a93d9c2d304266",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "AMZNx",
+      "underlyingSymbol": "AMZN",
+      "underlying": "0x3557Ba345B01EFa20A1bdDC61F573BFD87195081",
+      "wrapper": "0x910cabdE3EBa7Fc1Ce64fD14bD680b9f60fA0F90",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "COINx",
+      "underlyingSymbol": "COIN",
+      "underlying": "0x364f210f430eC2448Fc68A49203040F6124096F0",
+      "wrapper": "0x44C7eD7fFDF8465c9d27F60AEC845EEd3d49d56e",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "GOOGLx",
+      "underlyingSymbol": "GOOGL",
+      "underlying": "0xe92f673Ca36C5E2Efd2DE7628f815f84807e803F",
+      "wrapper": "0xf8c5308F80E459bb53d9EbE689854d9cBb2Caa6f",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "METAx",
+      "underlyingSymbol": "META",
+      "underlying": "0x96702be57Cd9777f835117a809C7124fe4ec989A",
+      "wrapper": "0xe840946FfEBCd66B7C4E95095effaFaDfa0D0e56",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "MSFTx",
+      "underlyingSymbol": "MSFT",
+      "underlying": "0x5621737f42dAE558b81269FcB9E9E70c19Aa6b35",
+      "wrapper": "0x166Fbe68274b6a47e025F4ba17388c539f1fa1d0",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "MSTRx",
+      "underlyingSymbol": "MSTR",
+      "underlying": "0xAE2f842EF90C0d5213259Ab82639D5BBF649b08E",
+      "wrapper": "0x30987adF0B11dc698438a99BA04ec3a1AB2c7EaB",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "NVDAx",
+      "underlyingSymbol": "NVDA",
+      "underlying": "0xc845b2894dBddd03858fd2D643B4eF725fE0849d",
+      "wrapper": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "QQQx",
+      "underlyingSymbol": "QQQ",
+      "underlying": "0xa753A7395cAe905Cd615Da0B82A53E0560f250af",
+      "wrapper": "0x4C1AE29c159838fC1b224636E28E086EB69101f7",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "SPYx",
+      "underlyingSymbol": "SPY",
+      "underlying": "0x90A2a4c76b5D8c0bc892A69EA28Aa775a8f2dD48",
+      "wrapper": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540",
+      "onchainVerified": true
+    },
+    {
+      "symbol": "TSLAx",
+      "underlyingSymbol": "TSLA",
+      "underlying": "0x8aD3c73F833d3F9A523aB01476625F269aEB7Cf0",
+      "wrapper": "0xc3FdBe3A68EE5dE461D30415a8165cf9Aefe1171",
+      "onchainVerified": true
+    }
+  ],
+  "assetProvenance": {
+    "source": "https://api.xstocks.fi/api/v2/public/assets",
+    "sourceRevision": "0xb24cd5d689eed6063b5c5339dc6235c69bb0d47fef11e7fea378099ef2c61368",
+    "sourceFetchedAt": "2026-09-22T20:36:10.584Z",
+    "issuerCatalogueSize": 1026,
+    "supportedCount": 12,
+    "onchainVerifiedCount": 12,
+    "verificationMethod": "symbol(), decimals() and ERC-4626 asset() called on chain 196; a wrapper that does not round-trip to the published underlying is not promoted to SUPPORTED"
+  },
+  "inputTokens": [
+    {
+      "symbol": "USDC",
+      "address": "0xb6ceceab302e2e4948951ee7843fc24e92933061",
+      "decimals": 6
+    },
+    {
+      "symbol": "USDG",
+      "address": "0x4ae46a509f6b1d9056937ba4500cb143933d2dc8",
+      "decimals": 6
+    }
+  ],
+  "conditionSources": [
+    {
+      "tier": "ATTESTED_SESSION",
+      "tierNumber": 3,
+      "status": "DEPLOYED",
+      "source": "xstocks.fi/api/v2/public/assets trading state",
+      "verification": "EIP-712 signature recovered and freshness enforced on chain",
+      "honestDescription": "operator-attested, not oracle-verified; the signature proves which key asserted which session and when, not that the assertion was correct"
+    },
+    {
+      "tier": "VERIFIED_DATA_STREAMS",
+      "tierNumber": 1,
+      "status": "IMPLEMENTED_NOT_EXERCISED",
+      "verifierProxyOnXLayer": "0xcE73c8ad08CBDEaCa6078BF0627C8fe0a9a536E7",
+      "verifierProxyConfirmed": "typeAndVersion() returns 'VerifierProxy 2.0.0' by direct call on chain 196",
+      "reportSchema": "v11 RWA Advanced, carries marketStatus uint32",
+      "whyUnused": "we could not reproduce usable equity-stream delivery and on-chain verification with the feed catalog, credentials and public integration path available in this build; Data Streams access is a paid subscription we did not purchase. This is a limit of our reproduction attempt and is NOT a claim that the streams are absent or unprovisioned for X Layer."
+    }
+  ],
+  "headlineClaim": "Bespeak took a funded tokenized-stock instruction, waited until the user's recorded market condition was satisfied, executed the bounded order on X Layer, and independently verified the expected asset delivery and vault state.",
+  "headlineClaimStatus": "NOT YET PROVEN \u2014 requires the canonical mainnet run",
+  "supportingBoundaryClaim": "When the condition, asset state, route, source freshness or user limits were not satisfied, Bespeak preserved the order and the capital instead of executing outside the user's envelope.",
+  "supportingBoundaryClaimStatus": "PROVEN in the campaign; see evidence/campaign.json",
+  "canonicalRunId": null,
+  "canonicalReceiptId": null,
+  "liveUrl": null,
+  "proofUrl": null,
+  "repoUrl": null,
+  "videoUrl": null,
+  "evidence": {
+    "testCount": 52,
+    "campaignProven": 27,
+    "campaignRequiresMainnet": 4,
+    "campaignFile": "evidence/campaign.json",
+    "reproduce": [
+      "forge test --root contracts",
+      "forge test --root contracts --match-contract ForkXLayer --fork-url https://rpc.xlayer.tech",
+      "node campaign/run.mjs",
+      "pnpm --filter @bespeak/assets sync",
+      "pnpm --filter @bespeak/conditions probe"
+    ]
+  },
+  "measured": {
+    "deployGasTotal": 7490838,
+    "worstCaseExecutionGas": 709713,
+    "meanExecutionGas": 263909,
+    "xLayerGasPriceWei": 20000001,
+    "note": "deploy gas measured on an X Layer mainnet fork; execution gas from the test suite"
+  },
+  "limitations": [
+    "The market-session condition source is Tier 3 operator-attested, not oracle-verified.",
+    "No external security audit. 52 tests including fuzzed accounting invariants and a mainnet-fork suite is not an audit.",
+    "The keeper is a single operator and admin is a single EOA; neither is a multisig.",
+    "No mainnet execution has occurred yet, so the headline claim is unproven.",
+    "No adoption or traction is claimed. Test wallets are not users.",
+    "Supported assets are 12 of the issuer's 1026-asset catalogue, restricted to those with a verified deployment."
+  ]
+}
