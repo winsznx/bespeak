@@ -13,5 +13,8 @@
     "test": "pnpm -r test",
     "contracts:build": "forge build --root contracts",
     "contracts:test": "forge test --root contracts -vv"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4"
   }
 }

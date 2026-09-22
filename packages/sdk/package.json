@@ -1,0 +1,11 @@
+{
+  "name": "@bespeak/sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit", "abi": "tsx scripts/export-abi.ts" },
+  "dependencies": { "@bespeak/shared": "workspace:*", "viem": "^2.21.0" },
+  "devDependencies": { "typescript": "^5.6.0", "tsx": "^4.19.0", "@types/node": "^22.0.0" }
+}

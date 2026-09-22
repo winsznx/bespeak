@@ -1,0 +1,23 @@
+{
+  "name": "@bespeak/worker",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "keeper": "tsx src/keeper.ts",
+    "verify": "tsx src/cli-verify.ts",
+    "registry:push": "tsx src/cli-registry.ts",
+    "api": "tsx src/api.ts"
+  },
+  "dependencies": {
+    "@bespeak/shared": "workspace:*",
+    "@bespeak/assets": "workspace:*",
+    "@bespeak/conditions": "workspace:*",
+    "@bespeak/okx": "workspace:*",
+    "@bespeak/sdk": "workspace:*",
+    "viem": "^2.21.0",
+    "hono": "^4.6.0",
+    "@hono/node-server": "^1.13.0"
+  },
+  "devDependencies": { "typescript": "^5.6.0", "tsx": "^4.19.0", "@types/node": "^22.0.0" }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "@bespeak/conditions",
+  "name": "@bespeak/okx",
   "version": "0.1.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@bespeak/shared": "workspace:*",
-    "@bespeak/assets": "workspace:*",
     "viem": "^2.21.0"
   },
   "devDependencies": {
