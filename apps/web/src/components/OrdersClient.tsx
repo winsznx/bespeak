@@ -1,12 +1,13 @@
 "use client";
 
 import {useMemo, useState} from "react";
-import {useAccount, usePublicClient, useReadContract, useWriteContract} from "wagmi";
-import type {Address, Hash} from "viem";
+import {useAccount, usePublicClient, useWriteContract} from "wagmi";
+import type {Address} from "viem";
 import {BespeakOrderManagerAbi} from "@bespeak/sdk";
 import {OrderStatus, TriggerType} from "@bespeak/shared";
 import {clientDeployment} from "@/lib/addresses";
 import {formatAmount, formatLocal} from "@/lib/format";
+import {useMarketState, type MarketState} from "@/lib/useMarketState";
 import {useOrderRecords, type OrderRecord} from "@/lib/useOrders";
 import {RecurringList} from "./RecurringList";
 
@@ -35,6 +36,7 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
   const {address, isConnected} = useAccount();
   const [tab, setTab] = useState<Tab>("active");
   const {orders, isLoading, refetch} = useOrderRecords(address);
+  const {byAssetId, reachable} = useMarketState();
 
   const filtered = useMemo(() => {
     if (tab === "active") return orders.filter((o) => o.status === OrderStatus.ACTIVE);
@@ -101,7 +103,15 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
 
       <div className="grid" style={{gap: 10}}>
         {tab !== "recurring" && filtered.map((o) => (
-          <OrderCard key={o.id} order={o} assets={assets} stables={stables} onChanged={refetch} />
+          <OrderCard
+            key={o.id}
+            order={o}
+            assets={assets}
+            stables={stables}
+            market={byAssetId.get(o.assetId.toLowerCase())}
+            sourceReachable={reachable}
+            onChanged={refetch}
+          />
         ))}
       </div>
     </>
@@ -112,11 +122,15 @@ function OrderCard({
   order,
   assets,
   stables,
+  market,
+  sourceReachable,
   onChanged,
 }: {
   order: OrderRecord;
   assets: AssetLite[];
   stables: Stable[];
+  market: MarketState | undefined;
+  sourceReachable: boolean;
   onChanged: () => void;
 }) {
   const asset = assets.find((a) => a.assetId.toLowerCase() === order.assetId.toLowerCase());
@@ -178,7 +192,7 @@ function OrderCard({
       )}
 
       {order.status === OrderStatus.ACTIVE && (
-        <HoldReason orderId={order.id} />
+        <HoldReason order={order} market={market} sourceReachable={sourceReachable} />
       )}
 
       <div className="row" style={{marginTop: 12}}>
@@ -202,21 +216,86 @@ function OrderCard({
   );
 }
 
-/// Why an active order has not executed. Read live from the chain so the explanation a user
-/// sees is the contract's own reason, not a guess assembled in the UI.
-function HoldReason({orderId}: {orderId: Hash}) {
-  const {data} = useReadContract({
-    address: clientDeployment()?.orderManager,
-    abi: BespeakOrderManagerAbi,
-    functionName: "getOrder",
-    args: [orderId],
-    query: {enabled: Boolean(clientDeployment())},
-  });
-  if (!data) return null;
+/// Why an active order has not executed, in the user's own terms.
+///
+/// This is a projection, not authority: the contract decides eligibility, and this explains
+/// the most likely current reason from live market state. PRD's inspectability rule is that
+/// a user must always be able to see why an order is waiting, without a developer
+/// explaining it and without anyone manufacturing a failed transaction to demonstrate it.
+function HoldReason({
+  order,
+  market,
+  sourceReachable,
+}: {
+  order: OrderRecord;
+  market: MarketState | undefined;
+  sourceReachable: boolean;
+}) {
+  const now = Date.now();
+
+  if (Number(order.validAfter) * 1000 > now) {
+    return (
+      <Waiting>
+        Scheduled to start {formatLocal(new Date(Number(order.validAfter) * 1000))}.
+      </Waiting>
+    );
+  }
+
+  if (order.triggerType === TriggerType.IMMEDIATE) {
+    return <Waiting>Queued for execution on the next keeper pass.</Waiting>;
+  }
+
+  if (order.triggerType === TriggerType.WHEN_AVAILABLE) {
+    return (
+      <Waiting>
+        Waiting for this asset to become tradable on X Layer. Your funds stay reserved until
+        it does, or until the deadline — whichever comes first.
+      </Waiting>
+    );
+  }
+
+  if (!sourceReachable || !market) {
+    return (
+      <Waiting>
+        We cannot currently read the market session, so nothing will execute. An unknown
+        session is never treated as open.
+      </Waiting>
+    );
+  }
+
+  if (market.halted) {
+    return <Waiting>Trading in {market.underlyingSymbol} is halted. Execution is on hold.</Waiting>;
+  }
+
+  if (market.eligibleForRegularSession) {
+    return (
+      <Waiting>
+        The regular session is open. This order is eligible and should execute shortly — if
+        it does not, the current price is outside the limit you set.
+      </Waiting>
+    );
+  }
+
+  const when = market.nextChangeAt ? new Date(market.nextChangeAt) : null;
+  return (
+    <Waiting>
+      Waiting for the regular {market.underlyingSymbol} session. The market is currently{" "}
+      {market.marketStatus === "CLOSED"
+        ? "closed"
+        : market.marketStatus === "PRE_MARKET"
+          ? "in pre-market"
+          : market.marketStatus === "POST_MARKET"
+            ? "in after-hours trading"
+            : "in an unknown state"}
+      {when ? `, next changing ${formatLocal(when)}` : ""}.
+    </Waiting>
+  );
+}
+
+function Waiting({children}: {children: React.ReactNode}) {
   return (
     <p className="tiny muted" style={{margin: "8px 0 0"}}>
-      Waiting for its condition. Your funds stay reserved and are released the moment you
-      cancel.
+      {children} Your funds stay reserved and are released the moment you cancel.
     </p>
   );
 }
