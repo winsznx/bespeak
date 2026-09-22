@@ -427,8 +427,14 @@ function Figure({
   if (pending) {
     return <Skeleton w="64%" h={30} r={8} style={{margin: "10px 0 8px"}} />;
   }
+  // An absent value is rendered faint: at display size a full-ink em dash reads as a
+  // filled bar, which looks like a stuck skeleton rather than "nothing here yet".
+  const empty = value === null;
   return (
-    <div className="t-figure" style={{margin: "10px 0 6px"}}>
+    <div
+      className="t-figure"
+      style={{margin: "10px 0 6px", color: empty ? "var(--ink-3)" : undefined}}
+    >
       {value ?? placeholder ?? "—"}
     </div>
   );

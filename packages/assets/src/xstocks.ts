@@ -84,15 +84,61 @@ async function getJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-/// Fetch the complete catalogue, following pagination to the end.
-export async function fetchAllAssets(maxPages = 50): Promise<XStocksAsset[]> {
-  const all: XStocksAsset[] = [];
-  for (let page = 0; page < maxPages; page++) {
-    const data = await getJson<AssetsPage>(`${XSTOCKS_API_BASE}/public/assets?page=${page}`);
-    all.push(...data.nodes);
-    if (!data.page.hasNextPage) return all;
+/// In-process cache for the catalogue.
+///
+/// The catalogue is 1026 assets across 11 pages. Every page that needs market session
+/// state would otherwise re-fetch all of it, which costs seconds per render and makes the
+/// app look broken behind a skeleton. Session state changes on the order of minutes, so a
+/// short TTL is honest here — and `sourceFetchedAt` on the manifest still records when the
+/// pinned registry data was actually read.
+let catalogueCache: {at: number; assets: XStocksAsset[]} | null = null;
+let catalogueInFlight: Promise<XStocksAsset[]> | null = null;
+
+const CATALOGUE_TTL_MS = Number(process.env.XSTOCKS_CATALOGUE_TTL_MS ?? 20_000);
+
+async function fetchPage(page: number): Promise<AssetsPage> {
+  return getJson<AssetsPage>(`${XSTOCKS_API_BASE}/public/assets?page=${page}`);
+}
+
+/// Fetch the complete catalogue.
+///
+/// Page 0 is fetched first to learn whether more exist, then the remainder are requested in
+/// parallel batches rather than one at a time. Sequential paging over 11 pages was the
+/// single slowest thing in the app.
+export async function fetchAllAssets(maxPages = 40): Promise<XStocksAsset[]> {
+  const now = Date.now();
+  if (catalogueCache && now - catalogueCache.at < CATALOGUE_TTL_MS) {
+    return catalogueCache.assets;
   }
-  throw new Error(`xStocks pagination exceeded ${maxPages} pages; refusing a partial catalogue`);
+  // Collapse concurrent callers onto one network fetch.
+  if (catalogueInFlight) return catalogueInFlight;
+
+  catalogueInFlight = (async () => {
+    const first = await fetchPage(0);
+    const all: XStocksAsset[] = [...first.nodes];
+
+    if (first.page.hasNextPage) {
+      const BATCH = 6;
+      let page = 1;
+      let more = true;
+      while (more && page < maxPages) {
+        const pages = Array.from({length: BATCH}, (_, i) => page + i).filter((p) => p < maxPages);
+        const results = await Promise.all(pages.map(fetchPage));
+        for (const r of results) all.push(...r.nodes);
+        more = results[results.length - 1]?.page.hasNextPage ?? false;
+        page += BATCH;
+      }
+    }
+
+    catalogueCache = {at: Date.now(), assets: all};
+    return all;
+  })();
+
+  try {
+    return await catalogueInFlight;
+  } finally {
+    catalogueInFlight = null;
+  }
 }
 
 export async function fetchMultiplier(

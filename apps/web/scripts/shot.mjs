@@ -77,7 +77,7 @@ await send("Emulation.setDeviceMetricsOverride", {
   mobile: width < 768,
 });
 await send("Page.navigate", {url});
-await new Promise((r) => setTimeout(r, 4200));
+await new Promise((r) => setTimeout(r, Number(process.env.SHOT_WAIT ?? 6500)));
 
 const shot = await send("Page.captureScreenshot", {
   format: "png",
