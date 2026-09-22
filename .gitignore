@@ -35,3 +35,6 @@ coverage/
 # next
 apps/web/.next/
 apps/web/next-env.d.ts
+
+# generated evidence from live runs (receipts are committed deliberately, not incidentally)
+evidence/tmp/

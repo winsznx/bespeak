@@ -65,6 +65,8 @@ export interface OrderView {
   validAfter: bigint;
   expiresAt: bigint;
   minSourceTier: number;
+  recurringId: Hash;
+  occurrenceIndex: number;
   status: number;
 }
 
