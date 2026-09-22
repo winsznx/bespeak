@@ -47,7 +47,7 @@ export default async function MarketsPage() {
               <th>Asset</th>
               <th>Underlying market</th>
               <th>X Layer</th>
-              <th>Hours</th>
+              <th>Pay with</th>
               <th />
             </tr>
           </thead>
@@ -71,12 +71,29 @@ export default async function MarketsPage() {
                     )}
                   </td>
                   <td>
-                    <span className="small" style={{color: "var(--filled)"}}>
-                      Trading
-                    </span>
+                    {a.route ? (
+                      <span className="small" style={{color: "var(--filled)"}}>
+                        Trading
+                      </span>
+                    ) : (
+                      <span className="small faint">No route</span>
+                    )}
                   </td>
-                  <td className="small faint">
-                    {a.tradingHoursMode === "TwentyFourFive" ? "24/5" : a.tradingHoursMode}
+                  <td className="small muted">
+                    {a.route ? (
+                      <>
+                        {a.route.quoteSymbol}
+                        <span className="faint">
+                          {" "}
+                          · $
+                          {a.route.quoteDepth.toLocaleString("en-US", {
+                            maximumFractionDigits: 0,
+                          })}
+                        </span>
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="num">
                     <Link href={`/asset/${a.symbol}`} className="btn btn-sm">
@@ -108,6 +125,12 @@ export default async function MarketsPage() {
           </dd>
           <dt>Chain</dt>
           <dd>X Layer mainnet · {REGISTRY.chainId}</dd>
+          <dt>Route discovery</dt>
+          <dd>
+            Executable pairs and their depth were found by scanning the X Layer V3 factory
+            on chain, not assumed. Depth is quote-side reserves at the time of the last
+            sync.
+          </dd>
         </dl>
       </details>
     </section>

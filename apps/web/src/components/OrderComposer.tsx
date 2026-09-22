@@ -17,6 +17,9 @@ export interface ComposerAsset {
   outputToken: `0x${string}`;
   outputDecimals: number;
   deliveredInstrument: "wrapped" | "underlying";
+  /// The stablecoin this asset actually has liquidity against on X Layer. Discovered on
+  /// chain, and used as the default so a user cannot land on an unexecutable pair.
+  routeQuoteSymbol: string | null;
 }
 
 interface Stable {
@@ -51,7 +54,9 @@ export function OrderComposer({
 }) {
   const {address, isConnected} = useAccount();
   const [condition, setCondition] = useState<Condition>("NEXT_REGULAR_SESSION");
-  const [stableSymbol, setStableSymbol] = useState(stables[0]?.symbol ?? "USDC");
+  const [stableSymbol, setStableSymbol] = useState(
+    asset.routeQuoteSymbol ?? stables[0]?.symbol ?? "USDC",
+  );
   const [amount, setAmount] = useState("");
   const [slippageBps, setSlippageBps] = useState(75);
   const [deadlineDays, setDeadlineDays] = useState(7);

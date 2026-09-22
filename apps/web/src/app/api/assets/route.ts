@@ -32,6 +32,15 @@ export function GET() {
       exchange: {mic: a.exchangeMic, timezone: a.exchangeTimezone},
       onchainVerified: a.onchainVerified,
       verificationNotes: a.verificationNotes,
+      route: a.route
+        ? {
+            payWith: a.route.quoteSymbol,
+            quoteToken: a.route.quoteToken,
+            pool: a.route.pool,
+            feeTier: a.route.feeTier,
+            quoteDepth: a.route.quoteDepth,
+          }
+        : null,
     })),
   });
 }

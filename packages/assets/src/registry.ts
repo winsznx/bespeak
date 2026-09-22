@@ -1,6 +1,7 @@
 import {createPublicClient, http, getAddress, keccak256, toHex, type Address} from "viem";
 import {xLayer, DEFAULT_VERIFY_RPC} from "@bespeak/shared";
 import {fetchAllAssets, xLayerDeployment, XSTOCKS_API_BASE, type XStocksAsset} from "./xstocks.js";
+import {discoverRoute, type DiscoveredRoute} from "./pools.js";
 
 /// A Bespeak asset entry, after provenance has been checked against both the issuer API and
 /// the chain itself.
@@ -23,6 +24,10 @@ export interface BespeakAsset {
   /// Set only when every on-chain check below passed.
   onchainVerified: boolean;
   verificationNotes: string[];
+  /// The pair that is actually executable for this asset, discovered on chain.
+  /// Null means no pool with liquidity was found, which makes the asset a legitimate
+  /// WHEN_AVAILABLE target rather than something to offer as immediately buyable.
+  route: DiscoveredRoute | null;
 }
 
 /// Stablecoins the issuer lists for X Layer. Confirmed on chain 196 on 2026-09-22.
@@ -124,6 +129,7 @@ export async function verifyOnchain(
     logo: asset.logo,
     onchainVerified: ok,
     verificationNotes: notes,
+    route: await discoverRoute((wrapper ?? underlying) as Address, rpcUrl),
   };
 }
 

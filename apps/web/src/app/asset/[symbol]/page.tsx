@@ -80,9 +80,13 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
           />
           <Fact
             label="X Layer"
-            value="Trading"
-            accent
-            sub={asset.onchainVerified ? "Verified on chain" : "Not verified"}
+            value={asset.route ? "Trading" : "No route"}
+            accent={Boolean(asset.route)}
+            sub={
+              asset.route
+                ? `Liquidity against ${asset.route.quoteSymbol}`
+                : "No executable pair found"
+            }
           />
         </div>
       </section>
@@ -98,6 +102,7 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
             outputToken: (asset.wrapper ?? asset.underlying) as `0x${string}`,
             outputDecimals: asset.wrapper ? (asset.wrapperDecimals ?? 18) : asset.underlyingDecimals,
             deliveredInstrument: asset.wrapper ? "wrapped" : "underlying",
+            routeQuoteSymbol: asset.route?.quoteSymbol ?? null,
           }}
           stables={Object.values(REGISTRY.stables)}
           sessionOpen={open}
@@ -127,7 +132,15 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
             <dd>
               {asset.exchangeMic} · {asset.exchangeTimezone}
             </dd>
-            <dt>Registry revision</dt>
+            <dt>Executable pair</dt>
+          <dd>
+            {asset.route
+              ? `${asset.route.quoteSymbol} / ${asset.wrapper ? `w${asset.symbol}` : asset.symbol} at the ${asset.route.feeTier / 10_000}% tier`
+              : "none found"}
+          </dd>
+          <dt>Pool</dt>
+          <dd className="mono">{asset.route?.pool ?? "n/a"}</dd>
+          <dt>Registry revision</dt>
             <dd className="mono">{REGISTRY.sourceRevision}</dd>
             <dt>Verification</dt>
             <dd>

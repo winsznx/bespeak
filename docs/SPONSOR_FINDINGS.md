@@ -74,3 +74,35 @@ undocumented-in-that-page `OK-ACCESS-PROJECT` is mandatory. Following the docs p
 produces requests that fail.
 Also: many older documentation URLs (`/build/dev-docs/...`, `/build/dev-docs-v5/...`) are
 dead; the live tree is `/onchainos/dev-docs/...`.
+
+## F-06 — The executable pair for an xStock on X Layer is not guessable from the metadata
+Discovered in this build by tracing real transfer counterparties, then scanning a
+Uniswap-V3-compatible factory at 0x4B2ab38DBF28D31D467aA8993f6c2585981D6804 across 192
+(quote, token, fee) combinations for the 12 launch assets.
+
+Two facts that no documentation we found states, and that an integrator would otherwise
+learn by shipping a broken pair:
+
+1. **All liquidity is against the ERC-4626 wrapper, never the underlying rebasing token.**
+   Every underlying pool discovered holds exactly zero. An integration that routes to the
+   base xStock address — the one the issuer API lists first as `deployments[].address` —
+   finds no liquidity at all.
+
+2. **The quote stablecoin differs per asset, and the issuer metadata does not say which.**
+   The xStocks API lists both USDC and USDG for every X Layer deployment, which reads as
+   "either works". On chain:
+     USDG: SPYx $1,091,099 · NVDAx $406,692 · AAPLx $279,899 · METAx $198,033
+           AMDx $174,591 · MSFTx $162,832 · MSTRx $118,977 · AMZNx $38,116
+     USDC: QQQx $522,505 · GOOGLx $374,961 · TSLAx $288,494 · COINx $106,021
+   NVDAx has no USDC pool with liquidity at any fee tier; TSLAx has no meaningful USDG one.
+   All liquidity sits at the 0.05% fee tier.
+
+Impact: a builder following the issuer metadata alone has a roughly even chance of
+offering an unexecutable pair for any given asset, and will route to the wrong token
+entirely unless they know to prefer the wrapper. Worth surfacing in the xStocks developer
+docs, or as a per-deployment "executable pair" field in the API.
+
+Bespeak's response: the registry sync now discovers the pair on chain per asset and the UI
+defaults to it, warning if a user selects the other stablecoin. Discovery never bypasses
+the trust boundary — execution still goes through the adapter, the router allowlist and the
+balance-delta postconditions.

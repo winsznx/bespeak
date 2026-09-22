@@ -27,6 +27,15 @@ export interface ManifestAsset {
   logo: string;
   onchainVerified: boolean;
   verificationNotes: string[];
+  route: {
+    quoteSymbol: string;
+    quoteToken: Address;
+    quoteDecimals: number;
+    targetToken: Address;
+    pool: Address;
+    feeTier: number;
+    quoteDepth: number;
+  } | null;
 }
 
 export interface Manifest {

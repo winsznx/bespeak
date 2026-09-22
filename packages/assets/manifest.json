@@ -1,7 +1,7 @@
 {
   "sourceRevision": "0xb24cd5d689eed6063b5c5339dc6235c69bb0d47fef11e7fea378099ef2c61368",
   "sourceUri": "https://api.xstocks.fi/api/v2/public/assets",
-  "sourceFetchedAt": "2026-09-22T20:36:10.584Z",
+  "sourceFetchedAt": "2026-09-22T22:25:41.334Z",
   "chainId": 196,
   "catalogueSize": 1026,
   "stables": {
@@ -36,7 +36,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/AAPLx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0x943BF64D566c32A2Bcd41AC92FB63C111cC9De8f",
+        "pool": "0xc44bd9c8589026D28D1632d7b86b2Efb6cDc8fd2",
+        "feeTier": 500,
+        "quoteDepth": 279899.310314
+      }
     },
     {
       "assetId": "0x79cf6e7bb15d3113e113a55d600290dc7fd9ab465233eecb1b8a8da99c22ea87",
@@ -55,7 +64,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/AMDx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0xEe7CcB0d37A12862e7f92F6C92a93d9c2d304266",
+        "pool": "0x853B01E6626aD3D4e6EaeF5eDB5AC50e53b1dA40",
+        "feeTier": 500,
+        "quoteDepth": 174591.228526
+      }
     },
     {
       "assetId": "0xabcc39e9e9c5c8f7051bab517d437a5a3484a52e67271d6dc13d61f9f60d007d",
@@ -74,7 +92,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/AMZNx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0x910cabdE3EBa7Fc1Ce64fD14bD680b9f60fA0F90",
+        "pool": "0x8C1C0d559D1C7AE6ed921cC77abd0f26aC2FE59a",
+        "feeTier": 500,
+        "quoteDepth": 38115.935442
+      }
     },
     {
       "assetId": "0xfd68cb66e46e958f526eae630dce76ca8e5ed2cb58a1b0217c821ba9543928ee",
@@ -93,7 +120,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/COINx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDC",
+        "quoteToken": "0xB6CEceAB302E2E4948951eE7843FC24E92933061",
+        "quoteDecimals": 6,
+        "targetToken": "0x44C7eD7fFDF8465c9d27F60AEC845EEd3d49d56e",
+        "pool": "0x91db1a80bd51FcBD30c6BFa398EEe0De24eE2663",
+        "feeTier": 500,
+        "quoteDepth": 106020.911755
+      }
     },
     {
       "assetId": "0x5cf30971ebeb0fa54eec109c784408cb8ec1544f2d7cd6643f9376950a97f678",
@@ -112,7 +148,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/GOOGLx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDC",
+        "quoteToken": "0xB6CEceAB302E2E4948951eE7843FC24E92933061",
+        "quoteDecimals": 6,
+        "targetToken": "0xf8c5308F80E459bb53d9EbE689854d9cBb2Caa6f",
+        "pool": "0x9F6273e2669cd812e76788b698374C43637c87c2",
+        "feeTier": 500,
+        "quoteDepth": 374960.747112
+      }
     },
     {
       "assetId": "0x081bab156cd979ef453c6112f9a1bce6836c8bca2d84b4711ad4260f7e640495",
@@ -131,7 +176,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/METAx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0xe840946FfEBCd66B7C4E95095effaFaDfa0D0e56",
+        "pool": "0xfAD9e3C7550768fd4f34Bc9CEFD365CC193C0fB0",
+        "feeTier": 500,
+        "quoteDepth": 198032.638007
+      }
     },
     {
       "assetId": "0xd5a61514550a691f12223f77985157ee15efc306ba306b2183bebfe0640b7584",
@@ -150,7 +204,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/MSFTx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0x166Fbe68274b6a47e025F4ba17388c539f1fa1d0",
+        "pool": "0x66187278490a70A8aC26a6E159EB045F82DbFb57",
+        "feeTier": 500,
+        "quoteDepth": 162832.01624
+      }
     },
     {
       "assetId": "0x8f23ffcf00f50b6246712c260d737e26e58cb61e6473fe70db78a6e45793e3c8",
@@ -169,7 +232,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/MSTRx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0x30987adF0B11dc698438a99BA04ec3a1AB2c7EaB",
+        "pool": "0xB665A8Ed2c09Bd243aCfEE75A82EF3A8b3f63c67",
+        "feeTier": 500,
+        "quoteDepth": 118977.306322
+      }
     },
     {
       "assetId": "0x6977a0680ac0652ec999cfcedf22b8c77022895b68a44c7a0e8854e30cbfdd44",
@@ -188,7 +260,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/NVDAx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+        "pool": "0x2a2B11730C2b6d99a58034A869dd810D7300a7b2",
+        "feeTier": 500,
+        "quoteDepth": 406692.047712
+      }
     },
     {
       "assetId": "0x512137809cbe978603790cb5f67dcdbbeab925f4948c3b4604ce9b451d72ca30",
@@ -207,7 +288,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/QQQx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDC",
+        "quoteToken": "0xB6CEceAB302E2E4948951eE7843FC24E92933061",
+        "quoteDecimals": 6,
+        "targetToken": "0x4C1AE29c159838fC1b224636E28E086EB69101f7",
+        "pool": "0x2Bd90724ffc80ba22Ec7Af8CFd2B4b51Ff395b04",
+        "feeTier": 500,
+        "quoteDepth": 522504.648841
+      }
     },
     {
       "assetId": "0x09e15e449186c7517b363cf03dea2e3ba9c42fc33795103ea7ea87c0fc938f99",
@@ -226,7 +316,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/SPYx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDG",
+        "quoteToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+        "quoteDecimals": 6,
+        "targetToken": "0xE7E553Cd128F0011777323A0b44a7b96EA1CB540",
+        "pool": "0x07c40850D14064D20eB0AfDEf9574675392f2c11",
+        "feeTier": 500,
+        "quoteDepth": 1091099.448469
+      }
     },
     {
       "assetId": "0x07bc73d9eaaa9f85a9be9875be2c247584a951a455516654ebba5db3b2742f23",
@@ -245,7 +344,16 @@
       "exchangeTimezone": "America/New_York",
       "logo": "https://xstocks-metadata.backed.fi/logos/tokens/TSLAx.png",
       "onchainVerified": true,
-      "verificationNotes": []
+      "verificationNotes": [],
+      "route": {
+        "quoteSymbol": "USDC",
+        "quoteToken": "0xB6CEceAB302E2E4948951eE7843FC24E92933061",
+        "quoteDecimals": 6,
+        "targetToken": "0xc3FdBe3A68EE5dE461D30415a8165cf9Aefe1171",
+        "pool": "0x6A58944EEd3d2074E137Eb4e94b302FE4AF247a6",
+        "feeTier": 500,
+        "quoteDepth": 288494.022629
+      }
     }
   ]
 }
