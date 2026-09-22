@@ -8,6 +8,7 @@ import {OrderStatus, TriggerType} from "@bespeak/shared";
 import {clientDeployment} from "@/lib/addresses";
 import {formatAmount, formatLocal} from "@/lib/format";
 import {useOrderRecords, type OrderRecord} from "@/lib/useOrders";
+import {RecurringList} from "./RecurringList";
 
 interface AssetLite {
   assetId: string;
@@ -18,10 +19,11 @@ interface AssetLite {
 interface Stable {
   address: Address;
   symbol: string;
+  name: string;
   decimals: number;
 }
 
-type Tab = "active" | "completed" | "all";
+type Tab = "active" | "recurring" | "completed" | "all";
 
 const TRIGGER_LABEL: Record<number, string> = {
   [TriggerType.IMMEDIATE]: "Buy now",
@@ -61,7 +63,7 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
   return (
     <>
       <div className="row" style={{marginBottom: 16}}>
-        {(["active", "completed", "all"] as Tab[]).map((t) => (
+        {(["active", "recurring", "completed", "all"] as Tab[]).map((t) => (
           <button
             key={t}
             className="btn btn-sm"
@@ -71,14 +73,22 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
               fontWeight: tab === t ? 600 : 500,
             }}
           >
-            {t === "active" ? "Active" : t === "completed" ? "Completed" : "All"}
+            {t === "active"
+              ? "Active"
+              : t === "recurring"
+                ? "Repeat"
+                : t === "completed"
+                  ? "Completed"
+                  : "All"}
           </button>
         ))}
       </div>
 
-      {isLoading && <div className="empty">Loading your orders…</div>}
+      {tab === "recurring" && <RecurringList assets={assets} stables={stables} />}
 
-      {!isLoading && filtered.length === 0 && (
+      {tab !== "recurring" && isLoading && <div className="empty">Loading your orders…</div>}
+
+      {tab !== "recurring" && !isLoading && filtered.length === 0 && (
         <div className="empty">
           <p style={{marginTop: 0}}>
             {tab === "active" ? "No orders waiting right now." : "Nothing here yet."}
@@ -90,7 +100,7 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
       )}
 
       <div className="grid" style={{gap: 10}}>
-        {filtered.map((o) => (
+        {tab !== "recurring" && filtered.map((o) => (
           <OrderCard key={o.id} order={o} assets={assets} stables={stables} onChanged={refetch} />
         ))}
       </div>
