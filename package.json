@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "description": "Condition-aware standing-order layer for tokenized equities on X Layer",
   "packageManager": "pnpm@11.23.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
