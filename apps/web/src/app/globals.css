@@ -1208,3 +1208,42 @@ details.tech > summary:hover { color: var(--ink); }
   line-height: 1.45;
   font-variant-numeric: normal;
 }
+
+/* ============================================================================
+   ACCESSIBILITY
+   ========================================================================= */
+
+/* Touch targets stay at least 44px on coarse pointers even where the visual
+   control is smaller. */
+@media (pointer: coarse) {
+  .btn-sm { min-height: 40px; }
+  .side-link, .tab, .nav-link { min-height: 44px; }
+}
+
+/* Focus is never removed for visual cleanliness. Inside dark panels it inverts
+   so it stays visible against the surface it sits on. */
+.wallet-card :focus-visible,
+.hero :focus-visible,
+.closing :focus-visible {
+  outline-color: currentColor;
+}
+
+/* Skip link: first tab stop on every page. */
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 16px;
+  border-radius: var(--r-control);
+  background: var(--brand);
+  color: var(--brand-ink);
+  font-size: 14px;
+  font-weight: 500;
+  transition: top var(--t) var(--ease);
+}
+.skip:focus { top: 12px; }
+
+/* Selected state must not rely on colour alone: the condition control also
+   changes weight and gains a ring. */
+.condition[aria-pressed="true"] .condition-what { color: var(--ink); }

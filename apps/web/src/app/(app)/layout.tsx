@@ -9,11 +9,16 @@ import {TabBar} from "@/components/app/TabBar";
 export default function AppLayout({children}: {children: ReactNode}) {
   return (
     <div className="app-canvas">
+      <a href="#main" className="skip">
+        Skip to content
+      </a>
       <div className="app-shell">
         <Sidebar />
         <div className="app-main">
           <Topbar />
-          <div className="app-body">{children}</div>
+          <div className="app-body" id="main">
+            {children}
+          </div>
         </div>
       </div>
       <TabBar />
