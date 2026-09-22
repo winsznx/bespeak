@@ -39,6 +39,7 @@ export function HeroPlane({
       </div>
 
       <div
+        data-plane-facts
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",

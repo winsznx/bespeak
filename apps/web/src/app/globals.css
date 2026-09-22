@@ -198,7 +198,8 @@
 
 * { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
+body { overflow-x: clip; }
 
 body {
   margin: 0;
@@ -909,12 +910,16 @@ button { font: inherit; }
   position: relative;
   display: flex;
   justify-content: center;
+  width: 100%;
+  min-width: 0;
   padding-top: clamp(24px, 3vw, 44px);
 }
 
 /* The product plane sits half-off the bottom edge, as the reference's photograph does. */
 .hero-plane {
   width: min(560px, 100%);
+  max-width: 100%;
+  min-width: 0;
   background: var(--surface);
   color: var(--ink);
   border-radius: 24px 24px 0 0;
@@ -945,6 +950,14 @@ button { font: inherit; }
   .hero { min-height: auto; padding-bottom: 0; }
   .hero-float { display: none; }
   .hero-copy { max-width: none; }
+  .hero-lede { max-width: none; }
+  /* The plane's paired facts stack rather than forcing a two-column minimum. */
+  .hero-plane [data-plane-facts] { grid-template-columns: minmax(0, 1fr) !important; }
+  .hero-plane [data-plane-facts] > * + * {
+    border-left: 0 !important;
+    border-top: 1px solid var(--line);
+    padding-left: 0 !important;
+  }
 }
 
 /* ---- editorial sections ---- */

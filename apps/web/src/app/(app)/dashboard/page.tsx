@@ -27,13 +27,15 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       deployed={deployment() !== null}
-      assets={REGISTRY.assets.map((a) => ({
+      assets={[...REGISTRY.assets]
+        .sort((a, b) => (b.route?.quoteDepth ?? 0) - (a.route?.quoteDepth ?? 0))
+        .map((a) => ({
         assetId: a.assetId,
         symbol: a.symbol,
         underlyingSymbol: a.underlyingSymbol,
         name: a.name.replace(" xStock", ""),
-        payWith: a.route?.quoteSymbol ?? null,
-      }))}
+          payWith: a.route?.quoteSymbol ?? null,
+        }))}
       stables={Object.values(REGISTRY.stables)}
       openNow={openNow}
       nextOpenIso={nextOpen.toISOString()}

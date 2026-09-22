@@ -26,7 +26,7 @@ export function ExecutionActivity({
     return (
       <div className="bars">
         {days.map((d) => (
-          <div className="bar-col" key={d.label}>
+          <div className="bar-col" key={d.key}>
             <Skeleton w="100%" h={148} r={999} style={{maxWidth: 54}} />
             <Skeleton w={14} h={10} />
           </div>
@@ -35,27 +35,47 @@ export function ExecutionActivity({
     );
   }
 
+  // No history is shown as seven empty tracks rather than a grey slab: zero bars IS the
+  // honest reading, and it keeps the module's geometry identical to when data arrives.
   if (!hasData) {
     return (
-      <div
-        style={{
-          height: 180,
-          display: "grid",
-          placeItems: "center",
-          textAlign: "center",
-          borderRadius: "var(--r-control)",
-          background: "var(--surface-2)",
-        }}
-      >
-        <div style={{maxWidth: "42ch", padding: "0 20px"}}>
-          <div className="t-h4" style={{marginBottom: 5}}>
-            No executions yet
+      <div style={{position: "relative"}}>
+        <div className="bars" aria-hidden="true">
+          {days.map((d) => (
+            <div className="bar-col" key={d.key}>
+              <div className="bar-track" />
+              <span className="bar-label">{d.label}</span>
+            </div>
+          ))}
+        </div>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            textAlign: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "34ch",
+              padding: "14px 18px",
+              borderRadius: "var(--r-control)",
+              background: "color-mix(in srgb, var(--surface) 88%, transparent)",
+              backdropFilter: "blur(2px)",
+            }}
+          >
+            <div className="t-h4" style={{marginBottom: 4}}>
+              No executions yet
+            </div>
+            <p className="t-xs muted prose" style={{margin: 0}}>
+              {connected
+                ? "The last seven sessions appear here once orders start filling."
+                : "Connect a wallet to see execution history."}
+            </p>
           </div>
-          <p className="t-sm muted prose" style={{margin: 0}}>
-            {connected
-              ? "Once your orders start filling, the last seven sessions appear here."
-              : "Connect a wallet to see execution history."}
-          </p>
         </div>
       </div>
     );
@@ -65,7 +85,7 @@ export function ExecutionActivity({
     <>
       <div className="bars">
         {days.map((d) => (
-          <div className="bar-col" key={d.label}>
+          <div className="bar-col" key={d.key}>
             <div className="bar-track" title={`${d.label}: ${d.total} events`}>
               {d.filled > 0 && (
                 <div
@@ -119,6 +139,7 @@ function Legend({tone, label}: {tone: string; label: string}) {
 }
 
 interface Day {
+  key: string;
   label: string;
   filled: number;
   waiting: number;
@@ -148,6 +169,7 @@ function buildDays(orders: OrderRecord[]): Day[] {
     }
 
     out.push({
+      key: String(start),
       label: d.toLocaleDateString("en-US", {weekday: "narrow"}),
       filled,
       waiting,
