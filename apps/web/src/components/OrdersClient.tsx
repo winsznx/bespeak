@@ -1,14 +1,13 @@
 "use client";
 
 import {useMemo, useState} from "react";
-import {useAccount, usePublicClient, useWriteContract} from "wagmi";
+import {useAccount} from "wagmi";
 import type {Address} from "viem";
-import {BespeakOrderManagerAbi} from "@bespeak/sdk";
-import {OrderStatus, TriggerType} from "@bespeak/shared";
+import {OrderStatus} from "@bespeak/shared";
 import {clientDeployment} from "@/lib/addresses";
-import {formatAmount, formatLocal} from "@/lib/format";
-import {useMarketState, type MarketState} from "@/lib/useMarketState";
-import {useOrderRecords, type OrderRecord} from "@/lib/useOrders";
+import {useMarketState} from "@/lib/useMarketState";
+import {useOrderRecords} from "@/lib/useOrders";
+import {OrderCard} from "./OrderCard";
 import {RecurringList} from "./RecurringList";
 
 interface AssetLite {
@@ -25,12 +24,6 @@ interface Stable {
 }
 
 type Tab = "active" | "recurring" | "completed" | "all";
-
-const TRIGGER_LABEL: Record<number, string> = {
-  [TriggerType.IMMEDIATE]: "Buy now",
-  [TriggerType.NEXT_REGULAR_SESSION]: "Next regular session",
-  [TriggerType.WHEN_AVAILABLE]: "When available on X Layer",
-};
 
 export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: Stable[]}) {
   const {address, isConnected} = useAccount();
@@ -64,16 +57,16 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
 
   return (
     <>
-      <div className="row" style={{marginBottom: 16}}>
+      <div className="wrap-row gap-4 mb-24" role="tablist">
         {(["active", "recurring", "completed", "all"] as Tab[]).map((t) => (
           <button
             key={t}
-            className="btn btn-sm"
+            role="tab"
+            aria-selected={tab === t}
+            className="nav-link"
             onClick={() => setTab(t)}
-            style={{
-              borderColor: tab === t ? "var(--text)" : "var(--border-strong)",
-              fontWeight: tab === t ? 600 : 500,
-            }}
+            data-active={tab === t}
+            style={{border: 0, background: tab === t ? "var(--surface-quiet)" : "transparent", cursor: "pointer", font: "inherit", fontSize: 14}}
           >
             {t === "active"
               ? "Active"
@@ -92,16 +85,20 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
 
       {tab !== "recurring" && !isLoading && filtered.length === 0 && (
         <div className="empty">
-          <p style={{marginTop: 0}}>
-            {tab === "active" ? "No orders waiting right now." : "Nothing here yet."}
+          <p className="body-2 mb-16" style={{marginTop: 0}}>
+            {tab === "active"
+              ? "Nothing waiting right now."
+              : tab === "completed"
+                ? "No completed purchases yet."
+                : "Nothing here yet."}
           </p>
-          <a className="btn btn-sm" href="/markets">
+          <a className="btn" href="/markets">
             Browse markets
           </a>
         </div>
       )}
 
-      <div className="grid" style={{gap: 10}}>
+      <div className="stack gap-12">
         {tab !== "recurring" && filtered.map((o) => (
           <OrderCard
             key={o.id}
@@ -116,194 +113,4 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
       </div>
     </>
   );
-}
-
-function OrderCard({
-  order,
-  assets,
-  stables,
-  market,
-  sourceReachable,
-  onChanged,
-}: {
-  order: OrderRecord;
-  assets: AssetLite[];
-  stables: Stable[];
-  market: MarketState | undefined;
-  sourceReachable: boolean;
-  onChanged: () => void;
-}) {
-  const asset = assets.find((a) => a.assetId.toLowerCase() === order.assetId.toLowerCase());
-  const stable = stables.find((s) => s.address.toLowerCase() === order.inputToken.toLowerCase());
-  const d = clientDeployment();
-  const publicClient = usePublicClient();
-  const {writeContractAsync} = useWriteContract();
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const amount = stable ? `${formatAmount(order.amountIn, stable.decimals)} ${stable.symbol}` : "—";
-  const expired = order.status === OrderStatus.ACTIVE && Number(order.expiresAt) * 1000 < Date.now();
-
-  async function cancel() {
-    if (!d || !publicClient) return;
-    setBusy(true);
-    setErr(null);
-    try {
-      const hash = await writeContractAsync({
-        address: d.orderManager,
-        abi: BespeakOrderManagerAbi,
-        functionName: "cancelOrder",
-        args: [order.id],
-      });
-      await publicClient.waitForTransactionReceipt({hash});
-      onChanged();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message.split("\n")[0]! : "Could not cancel");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="card">
-      <div className="between" style={{marginBottom: 10, alignItems: "flex-start"}}>
-        <div className="stack">
-          <strong style={{fontSize: 16}}>{asset?.underlyingSymbol ?? "Unknown asset"}</strong>
-          <span className="small muted">{TRIGGER_LABEL[order.triggerType] ?? "Order"}</span>
-        </div>
-        <StatusBadge status={order.status} expired={expired} />
-      </div>
-
-      <div className="between small" style={{marginBottom: 6}}>
-        <span className="muted">Reserved</span>
-        <span className="mono">{amount}</span>
-      </div>
-      {order.status === OrderStatus.ACTIVE && (
-        <div className="between small" style={{marginBottom: 6}}>
-          <span className="muted">Deadline</span>
-          <span>{formatLocal(new Date(Number(order.expiresAt) * 1000))}</span>
-        </div>
-      )}
-      {order.recurringId !== "0x0000000000000000000000000000000000000000000000000000000000000000" && (
-        <div className="between small" style={{marginBottom: 6}}>
-          <span className="muted">Repeat</span>
-          <span>Purchase #{order.occurrenceIndex + 1}</span>
-        </div>
-      )}
-
-      {order.status === OrderStatus.ACTIVE && (
-        <HoldReason order={order} market={market} sourceReachable={sourceReachable} />
-      )}
-
-      <div className="row" style={{marginTop: 12}}>
-        {order.status === OrderStatus.ACTIVE && (
-          <button className="btn btn-sm" onClick={cancel} disabled={busy}>
-            {busy ? "Cancelling…" : "Cancel"}
-          </button>
-        )}
-        {order.status === OrderStatus.FILLED && (
-          <a className="btn btn-sm" href={`/receipt/${order.id}`}>
-            View receipt
-          </a>
-        )}
-      </div>
-      {err && (
-        <p className="tiny" style={{color: "var(--negative)", marginBottom: 0}}>
-          {err}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/// Why an active order has not executed, in the user's own terms.
-///
-/// This is a projection, not authority: the contract decides eligibility, and this explains
-/// the most likely current reason from live market state. PRD's inspectability rule is that
-/// a user must always be able to see why an order is waiting, without a developer
-/// explaining it and without anyone manufacturing a failed transaction to demonstrate it.
-function HoldReason({
-  order,
-  market,
-  sourceReachable,
-}: {
-  order: OrderRecord;
-  market: MarketState | undefined;
-  sourceReachable: boolean;
-}) {
-  const now = Date.now();
-
-  if (Number(order.validAfter) * 1000 > now) {
-    return (
-      <Waiting>
-        Scheduled to start {formatLocal(new Date(Number(order.validAfter) * 1000))}.
-      </Waiting>
-    );
-  }
-
-  if (order.triggerType === TriggerType.IMMEDIATE) {
-    return <Waiting>Queued for execution on the next keeper pass.</Waiting>;
-  }
-
-  if (order.triggerType === TriggerType.WHEN_AVAILABLE) {
-    return (
-      <Waiting>
-        Waiting for this asset to become tradable on X Layer. Your funds stay reserved until
-        it does, or until the deadline — whichever comes first.
-      </Waiting>
-    );
-  }
-
-  if (!sourceReachable || !market) {
-    return (
-      <Waiting>
-        We cannot currently read the market session, so nothing will execute. An unknown
-        session is never treated as open.
-      </Waiting>
-    );
-  }
-
-  if (market.halted) {
-    return <Waiting>Trading in {market.underlyingSymbol} is halted. Execution is on hold.</Waiting>;
-  }
-
-  if (market.eligibleForRegularSession) {
-    return (
-      <Waiting>
-        The regular session is open. This order is eligible and should execute shortly — if
-        it does not, the current price is outside the limit you set.
-      </Waiting>
-    );
-  }
-
-  const when = market.nextChangeAt ? new Date(market.nextChangeAt) : null;
-  return (
-    <Waiting>
-      Waiting for the regular {market.underlyingSymbol} session. The market is currently{" "}
-      {market.marketStatus === "CLOSED"
-        ? "closed"
-        : market.marketStatus === "PRE_MARKET"
-          ? "in pre-market"
-          : market.marketStatus === "POST_MARKET"
-            ? "in after-hours trading"
-            : "in an unknown state"}
-      {when ? `, next changing ${formatLocal(when)}` : ""}.
-    </Waiting>
-  );
-}
-
-function Waiting({children}: {children: React.ReactNode}) {
-  return (
-    <p className="tiny muted" style={{margin: "8px 0 0"}}>
-      {children} Your funds stay reserved and are released the moment you cancel.
-    </p>
-  );
-}
-
-function StatusBadge({status, expired}: {status: number; expired: boolean}) {
-  if (status === OrderStatus.FILLED) return <span className="pill pill-done">Completed</span>;
-  if (status === OrderStatus.CANCELLED) return <span className="pill pill-off">Cancelled</span>;
-  if (status === OrderStatus.EXPIRED) return <span className="pill pill-off">Expired</span>;
-  if (expired) return <span className="pill pill-wait">Deadline passed</span>;
-  return <span className="pill pill-wait">Waiting</span>;
 }

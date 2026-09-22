@@ -54,14 +54,14 @@ export function ActivityClient({assets, stables}: {assets: AssetLite[]; stables:
   }
 
   return (
-    <div className="grid" style={{gap: 8}}>
+    <div className="stack gap-8">
       {orders.map((o) => {
         const asset = assets.find((a) => a.assetId.toLowerCase() === o.assetId.toLowerCase());
         const stable = stables.find((s) => s.address.toLowerCase() === o.inputToken.toLowerCase());
         const amount = stable ? `${formatAmount(o.amountIn, stable.decimals)} ${stable.symbol}` : "";
 
         return (
-          <div className="card" key={o.id}>
+          <div className="panel panel-pad" key={o.id}>
             <div className="between">
               <div className="stack">
                 <span>

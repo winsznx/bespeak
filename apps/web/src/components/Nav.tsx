@@ -3,9 +3,9 @@
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {ConnectButton} from "./ConnectButton";
+import {Wordmark} from "./Wordmark";
 
 const LINKS = [
-  {href: "/", label: "Home"},
   {href: "/markets", label: "Markets"},
   {href: "/orders", label: "Orders"},
   {href: "/vault", label: "Vault"},
@@ -13,13 +13,15 @@ const LINKS = [
   {href: "/activity", label: "Activity"},
 ];
 
+/// Chrome recedes. The navigation is quiet enough that the page content is visibly the
+/// thing on screen, which is the whole point of a product about not watching the market.
 export function Nav() {
   const pathname = usePathname();
   return (
     <nav className="nav">
-      <div className="wrap nav-inner">
-        <Link href="/" className="brand">
-          Bespeak
+      <div className="page nav-inner">
+        <Link href="/" aria-label="Bespeak home">
+          <Wordmark />
         </Link>
         <div className="nav-links">
           {LINKS.map((l) => (
@@ -27,7 +29,7 @@ export function Nav() {
               key={l.href}
               href={l.href}
               className="nav-link"
-              data-active={l.href === "/" ? pathname === "/" : pathname.startsWith(l.href)}
+              data-active={pathname.startsWith(l.href)}
             >
               {l.label}
             </Link>

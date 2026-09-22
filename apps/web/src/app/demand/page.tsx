@@ -46,20 +46,20 @@ export default async function DemandPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-2" style={{marginBottom: 20}}>
-            <div className="card">
+          <div className="grid-auto" style={{marginBottom: 20}}>
+            <div className="panel panel-pad">
               <h3 className="muted small" style={{fontWeight: 500}}>Total committed</h3>
               <div style={{fontSize: 24, fontWeight: 600}}>
                 {formatAmount(totalCommitted, stable.decimals)} {stable.symbol}
               </div>
             </div>
-            <div className="card">
+            <div className="panel panel-pad">
               <h3 className="muted small" style={{fontWeight: 500}}>Active commitments</h3>
               <div style={{fontSize: 24, fontWeight: 600}}>{totalOrders}</div>
             </div>
           </div>
 
-          <div className="card" style={{padding: 0, overflowX: "auto"}}>
+          <div style={{overflowX: "auto"}}>
             <table className="table">
               <thead>
                 <tr>

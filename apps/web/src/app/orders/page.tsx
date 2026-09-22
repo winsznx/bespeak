@@ -3,11 +3,11 @@ import {REGISTRY} from "@/lib/server";
 
 export default function OrdersPage() {
   return (
-    <section className="section">
-      <h1>Orders</h1>
-      <p className="lede">
-        Everything you have asked Bespeak to do. An order that has not executed always says
-        why, and you can cancel it and take the funds back at any time.
+    <section style={{paddingTop: 48, paddingBottom: 24}}>
+      <h1 className="mb-8">Orders</h1>
+      <p className="lede mb-32">
+        Your standing instructions. Anything still waiting says what it is waiting for, and
+        you can take the funds back at any time.
       </p>
       <OrdersClient
         assets={REGISTRY.assets.map((a) => ({

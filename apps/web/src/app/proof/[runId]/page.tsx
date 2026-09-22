@@ -48,7 +48,7 @@ export default async function ProofPage({params}: {params: Promise<{runId: strin
     <section className="section">
       <div className="between" style={{marginBottom: 6}}>
         <h1 style={{margin: 0}}>Run {runId.slice(0, 12)}</h1>
-        <span className={receipt.finalOutcomeStatus === "VERIFIED_FILLED" ? "pill pill-done" : "pill pill-wait"}>
+        <span className={receipt.finalOutcomeStatus === "VERIFIED_FILLED" ? "badge badge-filled" : "badge badge-waiting"}>
           {receipt.finalOutcomeStatus}
         </span>
       </div>
@@ -153,7 +153,7 @@ export default async function ProofPage({params}: {params: Promise<{runId: strin
           </tbody>
         </table>
         {failed.length > 0 && (
-          <div className="notice notice-wait" style={{marginTop: 12}}>
+          <div className="note note-waiting" style={{marginTop: 12}}>
             {failed.length} check(s) did not pass, which is why this run is{" "}
             {receipt.finalOutcomeStatus} and not VERIFIED_FILLED.
           </div>
@@ -202,7 +202,7 @@ forge test --root contracts`}
 
 function Numbered({n, title, children}: {n: number; title: string; children: React.ReactNode}) {
   return (
-    <div className="card" style={{marginBottom: 10}}>
+    <div className="panel panel-pad" style={{marginBottom: 10}}>
       <h2 style={{fontSize: 15, marginBottom: 10}}>
         <span className="muted" style={{marginRight: 8}}>
           {n}

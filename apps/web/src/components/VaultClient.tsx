@@ -44,48 +44,51 @@ export function VaultClient({stables}: {stables: Stable[]}) {
 
   return (
     <>
-      <div className="row" style={{marginBottom: 16}}>
+      <div className="wrap-row gap-4 mb-24">
         {stables.map((s) => (
           <button
             key={s.symbol}
-            className="btn btn-sm"
+            className="nav-link"
             onClick={() => setSymbol(s.symbol)}
-            style={{borderColor: symbol === s.symbol ? "var(--text)" : "var(--border-strong)"}}
+            data-active={symbol === s.symbol}
+            style={{border: 0, background: symbol === s.symbol ? "var(--surface-quiet)" : "transparent", cursor: "pointer", font: "inherit", fontSize: 14}}
           >
             {s.symbol}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-3" style={{marginBottom: 20}}>
-        <div className="card">
-          <h3 className="muted small" style={{fontWeight: 500}}>Available</h3>
-          <div style={{fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums"}}>
-            {vault.availableFormatted}
-          </div>
-          <p className="tiny muted" style={{margin: "2px 0 0"}}>
-            Withdrawable now, or usable for a new order
-          </p>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          borderTop: "1px solid var(--line)",
+          borderBottom: "1px solid var(--line)",
+          marginBottom: 32,
+        }}
+      >
+        <div style={{padding: "24px 24px 24px 0"}}>
+          <div className="overline mb-8">Available</div>
+          <div className="figure">{vault.availableFormatted}</div>
+          <div className="tiny faint mt-4">Withdrawable, or usable for a new order</div>
         </div>
-        <div className="card">
-          <h3 className="muted small" style={{fontWeight: 500}}>Reserved</h3>
-          <div style={{fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums"}}>
+        <div style={{padding: "24px 24px 24px 0"}}>
+          <div className="overline mb-8">Reserved</div>
+          <div className="figure" style={{color: "var(--waiting)"}}>
             {vault.reservedFormatted}
           </div>
-          <p className="tiny muted" style={{margin: "2px 0 0"}}>
-            Backing your active orders. Cancel one to free it.
-          </p>
+          <div className="tiny faint mt-4">Backing your active orders</div>
         </div>
-        <div className="card">
-          <h3 className="muted small" style={{fontWeight: 500}}>Total</h3>
-          <div style={{fontSize: 24, fontWeight: 600, fontVariantNumeric: "tabular-nums"}}>
+        <div style={{padding: "24px 0"}}>
+          <div className="overline mb-8">Total</div>
+          <div className="figure" style={{color: "var(--text-2)"}}>
             {vault.totalFormatted}
           </div>
-          <p className="tiny muted" style={{margin: "2px 0 0"}}>{stable.symbol} in your vault</p>
+          <div className="tiny faint mt-4">{stable.symbol} in your vault</div>
         </div>
       </div>
 
-      <div className="grid grid-2">
+      <div className="grid-auto">
         <DepositCard stable={stable} vaultAddress={vault.address} exists={vault.exists} onDone={vault.refetch} />
         <WithdrawCard stable={stable} vault={vault} onDone={vault.refetch} />
       </div>
@@ -205,7 +208,7 @@ function DepositCard({
   }
 
   return (
-    <div className="card">
+    <div className="panel panel-pad">
       <h2>Deposit</h2>
       <p className="small muted" style={{marginTop: 0}}>
         In your wallet: {formatAmount(bal, stable.decimals)} {stable.symbol}
@@ -276,7 +279,7 @@ function WithdrawCard({
   }
 
   return (
-    <div className="card">
+    <div className="panel panel-pad">
       <h2>Withdraw</h2>
       <p className="small muted" style={{marginTop: 0}}>
         Available to withdraw: {vault.availableFormatted} {stable.symbol}

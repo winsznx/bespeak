@@ -17,11 +17,11 @@ export function ConnectButton() {
     const injected = connectors[0];
     return (
       <button
-        className="btn btn-primary btn-sm"
+        className="btn btn-sm"
         disabled={!injected || isPending}
         onClick={() => injected && connect({connector: injected})}
       >
-        {isPending ? "Connecting" : injected ? "Connect wallet" : "No wallet found"}
+        {isPending ? "Connecting" : injected ? "Connect" : "No wallet"}
       </button>
     );
   }

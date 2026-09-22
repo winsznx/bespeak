@@ -41,7 +41,7 @@ export function RecurringList({assets, stables}: {assets: AssetLite[]; stables: 
   }
 
   return (
-    <div className="grid" style={{gap: 10}}>
+    <div className="stack gap-12">
       {series.map((r) => (
         <SeriesCard key={r.id} series={r} assets={assets} stables={stables} onChanged={refetch} />
       ))}
@@ -114,7 +114,7 @@ function SeriesCard({
   const cadence = interval === 7 ? "week" : interval === 14 ? "2 weeks" : `${interval} days`;
 
   return (
-    <div className="card">
+    <div className="panel panel-pad">
       <div className="between" style={{alignItems: "flex-start", marginBottom: 10}}>
         <div className="stack">
           <strong style={{fontSize: 16}}>
@@ -124,13 +124,13 @@ function SeriesCard({
           <span className="small muted">Every {cadence}, during the regular session</span>
         </div>
         {!series.active ? (
-          <span className="pill pill-off">Finished</span>
+          <span className="badge badge-neutral">Finished</span>
         ) : series.paused ? (
-          <span className="pill pill-off">Paused</span>
+          <span className="badge badge-neutral">Paused</span>
         ) : needsTopUp ? (
-          <span className="pill pill-wait">Needs top-up</span>
+          <span className="badge badge-waiting">Needs top-up</span>
         ) : (
-          <span className="pill pill-open">
+          <span className="badge badge-filled">
             <span className="dot" />
             Active
           </span>
@@ -168,7 +168,7 @@ function SeriesCard({
       </p>
 
       {needsTopUp && (
-        <div className="notice notice-wait" style={{marginTop: 10}}>
+        <div className="note note-waiting" style={{marginTop: 10}}>
           Next purchase is waiting for funds. Add{" "}
           {vault.format(nextCost - (vault.available ?? 0n))} {stable.symbol} to your vault and
           it resumes — the series has not been cancelled.{" "}

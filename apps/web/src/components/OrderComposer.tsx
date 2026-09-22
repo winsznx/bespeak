@@ -7,6 +7,7 @@ import {TriggerType} from "@bespeak/shared";
 import {formatLocal, nextRegularSessionOpen} from "@/lib/format";
 import {useVault} from "@/lib/useVault";
 import {useCreateOrder} from "@/lib/useCreateOrder";
+import {Countdown} from "./Countdown";
 
 export interface ComposerAsset {
   assetId: `0x${string}`;
@@ -27,31 +28,18 @@ interface Stable {
 
 type Condition = "IMMEDIATE" | "NEXT_REGULAR_SESSION" | "WHEN_AVAILABLE" | "RECURRING";
 
-const CONDITIONS: Array<{key: Condition; title: string; blurb: string}> = [
-  {
-    key: "IMMEDIATE",
-    title: "Buy now",
-    blurb: "Execute straight away at the current X Layer price, within your limits.",
-  },
-  {
-    key: "NEXT_REGULAR_SESSION",
-    title: "Next regular session",
-    blurb: "Wait until the underlying US stock is in its regular trading session, then buy.",
-  },
-  {
-    key: "WHEN_AVAILABLE",
-    title: "When available on X Layer",
-    blurb: "Reserve funds now and execute once this asset becomes tradable on X Layer.",
-  },
-  {
-    key: "RECURRING",
-    title: "Repeat",
-    blurb: "Buy on a schedule. Each purchase still respects the market condition you choose.",
-  },
-];
+const QUICK = [50, 100, 200, 500];
 
-/// The order composer. One component serves all four execution paths because they are one
-/// primitive underneath; only the trigger and the deadline semantics differ.
+/// The order composer.
+///
+/// The product's differentiated control is not an order-type dropdown, it is the question
+/// "when should Bespeak buy?". That question is the visual heart of this screen, and
+/// everything else is deliberately quieter than it.
+///
+/// Fields reveal progressively: only what the chosen condition actually needs appears, and
+/// the advanced envelope stays folded until asked for. The user's instruction is rendered
+/// back to them as a sentence throughout, so what they are authorizing is never hidden
+/// inside a set of controls.
 export function OrderComposer({
   asset,
   stables,
@@ -74,9 +62,10 @@ export function OrderComposer({
   const stable = stables.find((s) => s.symbol === stableSymbol) ?? stables[0]!;
   const vault = useVault(address, stable);
   const create = useCreateOrder();
+  const nextOpen = nextRegularSessionOpen();
 
   const amountRaw = useMemo(() => {
-    if (!amount || Number.isNaN(Number(amount))) return 0n;
+    if (!amount) return 0n;
     try {
       return parseUnits(amount, stable.decimals);
     } catch {
@@ -84,268 +73,295 @@ export function OrderComposer({
     }
   }, [amount, stable.decimals]);
 
-  const perOccurrence = condition === "RECURRING" ? amountRaw : amountRaw;
-  const needsTopUp = vault.available !== null && perOccurrence > vault.available;
-  const shortfall = vault.available !== null ? perOccurrence - vault.available : 0n;
+  const needsTopUp = vault.available !== null && amountRaw > vault.available;
+  const shortfall = vault.available !== null ? amountRaw - vault.available : 0n;
+  const hasAmount = amountRaw > 0n;
+  const canSubmit = isConnected && hasAmount && !needsTopUp && !create.isPending;
 
-  const canSubmit =
-    isConnected && amountRaw > 0n && !needsTopUp && !create.isPending && vault.address !== null;
-
-  const deadline = new Date(Date.now() + deadlineDays * 86_400_000);
+  const choices: Array<{key: Condition; name: string; what: string; ctx: React.ReactNode}> = [
+    {
+      key: "IMMEDIATE",
+      name: "Now",
+      what: "Buy immediately at the current X Layer price.",
+      ctx: <span style={{color: "var(--filled)"}}>X Layer market available now</span>,
+    },
+    {
+      key: "NEXT_REGULAR_SESSION",
+      name: "Next session",
+      what: "Wait for the underlying US stock to reach its regular session.",
+      ctx: sessionOpen ? (
+        <span style={{color: "var(--filled)"}}>Open now — eligible immediately</span>
+      ) : (
+        <>
+          Opens in <Countdown to={nextOpen.toISOString()} />
+        </>
+      ),
+    },
+    {
+      key: "WHEN_AVAILABLE",
+      name: "When available",
+      what: "Reserve until this asset becomes tradable on X Layer.",
+      ctx: "Funds released automatically at your deadline",
+    },
+    {
+      key: "RECURRING",
+      name: "Repeat",
+      what: "Make this a standing instruction on a schedule.",
+      ctx: "Only the next purchase is ever funded",
+    },
+  ];
 
   return (
-    <div className="card">
-      <h2>Create an order</h2>
-
-      {/* ---- amount ---- */}
-      <div className="grid grid-2" style={{marginBottom: 20}}>
-        <div>
-          <label className="label" htmlFor="amount">
-            Amount to spend {condition === "RECURRING" ? "per purchase" : ""}
-          </label>
+    <div className="panel panel-pad">
+      {/* ---------- 1. amount ---------- */}
+      <div className="mb-32">
+        <label className="field-label" htmlFor="amount">
+          How much do you want to spend
+          {condition === "RECURRING" ? " each time" : ""}?
+        </label>
+        <div className="amount-field">
+          <span className="prefix">$</span>
           <input
             id="amount"
-            className="input"
             inputMode="decimal"
-            placeholder="200"
+            placeholder="0"
+            autoComplete="off"
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
           />
-        </div>
-        <div>
-          <label className="label" htmlFor="stable">
-            Pay with
-          </label>
-          <select
-            id="stable"
-            className="select"
-            value={stableSymbol}
-            onChange={(e) => setStableSymbol(e.target.value)}
-          >
-            {stables.map((s) => (
-              <option key={s.symbol} value={s.symbol}>
-                {s.symbol} — {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* ---- condition ---- */}
-      <label className="label">When should this execute?</label>
-      <div className="grid grid-2" style={{marginBottom: 20}}>
-        {CONDITIONS.map((c) => (
-          <button
-            key={c.key}
-            type="button"
-            onClick={() => setCondition(c.key)}
-            className="card"
-            style={{
-              textAlign: "left",
-              cursor: "pointer",
-              borderColor: condition === c.key ? "var(--accent)" : "var(--border)",
-              borderWidth: 1,
-              outline: condition === c.key ? "1px solid var(--accent)" : "none",
-              font: "inherit",
-              color: "inherit",
-              background: "var(--surface)",
-            }}
-          >
-            <h3 style={{marginBottom: 4}}>{c.title}</h3>
-            <p className="tiny muted" style={{margin: 0}}>
-              {c.blurb}
-            </p>
-          </button>
-        ))}
-      </div>
-
-      {condition === "NEXT_REGULAR_SESSION" && (
-        <div className="notice" style={{marginBottom: 20}}>
-          {sessionOpen ? (
-            <>
-              The regular session is open right now, so this order becomes eligible
-              immediately and should execute on the next keeper pass.
-            </>
+          {stables.length > 1 ? (
+            <select
+              aria-label="Pay with"
+              value={stableSymbol}
+              onChange={(e) => setStableSymbol(e.target.value)}
+              className="suffix"
+              style={{
+                border: 0,
+                font: "inherit",
+                fontSize: 14,
+                fontWeight: 500,
+                color: "var(--text-2)",
+                cursor: "pointer",
+                appearance: "none",
+                textAlign: "center",
+              }}
+            >
+              {stables.map((s) => (
+                <option key={s.symbol} value={s.symbol}>
+                  {s.symbol}
+                </option>
+              ))}
+            </select>
           ) : (
-            <>
-              The regular session is closed. This order will wait, and is expected to become
-              eligible around {formatLocal(nextRegularSessionOpen())}. Your funds stay
-              reserved and withdrawable by cancelling at any point before it executes.
-            </>
+            <span className="suffix">{stable.symbol}</span>
           )}
         </div>
-      )}
 
-      {condition === "RECURRING" && (
-        <div className="grid grid-2" style={{marginBottom: 20}}>
-          <div>
-            <label className="label" htmlFor="interval">
-              Repeat every
-            </label>
-            <select
-              id="interval"
-              className="select"
-              value={intervalDays}
-              onChange={(e) => setIntervalDays(Number(e.target.value))}
+        <div className="wrap-row gap-8 mt-12">
+          {QUICK.map((q) => (
+            <button
+              key={q}
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setAmount(String(q))}
+              style={{
+                borderColor: amount === String(q) ? "var(--accent)" : "var(--line-strong)",
+                color: amount === String(q) ? "var(--accent)" : "var(--text-2)",
+              }}
             >
-              <option value={7}>Week</option>
-              <option value={14}>2 weeks</option>
-              <option value={30}>Month</option>
-            </select>
+              ${q}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ---------- 2. when: the heart of the product ---------- */}
+      <div className="mb-32">
+        <h2 className="mb-16">When should Bespeak buy?</h2>
+        <div className="choices">
+          {choices.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              className="choice"
+              data-selected={condition === c.key}
+              aria-pressed={condition === c.key}
+              onClick={() => setCondition(c.key)}
+            >
+              <span className="choice-dot" aria-hidden="true" />
+              <span style={{minWidth: 0}}>
+                <span className="choice-name">{c.name}</span>
+                <span className="choice-what" style={{display: "block"}}>
+                  {c.what}
+                </span>
+                <span className="choice-ctx">{c.ctx}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ---------- 3. only the fields this condition needs ---------- */}
+      {condition === "RECURRING" && (
+        <div className="mb-32 enter">
+          <div style={{display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr"}}>
+            <div>
+              <label className="field-label" htmlFor="interval">
+                Repeat every
+              </label>
+              <select
+                id="interval"
+                className="select"
+                value={intervalDays}
+                onChange={(e) => setIntervalDays(Number(e.target.value))}
+              >
+                <option value={7}>Week</option>
+                <option value={14}>2 weeks</option>
+                <option value={30}>Month</option>
+              </select>
+            </div>
+            <div>
+              <label className="field-label" htmlFor="count">
+                Number of purchases
+              </label>
+              <input
+                id="count"
+                className="input"
+                type="number"
+                min={2}
+                max={52}
+                value={occurrences}
+                onChange={(e) => setOccurrences(Number(e.target.value))}
+              />
+            </div>
           </div>
-          <div>
-            <label className="label" htmlFor="count">
-              Number of purchases
-            </label>
-            <input
-              id="count"
-              className="input"
-              type="number"
-              min={2}
-              max={52}
-              value={occurrences}
-              onChange={(e) => setOccurrences(Number(e.target.value))}
-            />
-          </div>
-          <p className="tiny muted" style={{gridColumn: "1 / -1", margin: 0}}>
-            Only the next purchase is funded at a time. Bespeak will not lock{" "}
-            {occurrences} purchases worth of capital today — it reserves each one as it comes
-            due, and tells you if you need to top up.
+          <p className="note mt-16">
+            Bespeak reserves one purchase at a time. The other {Math.max(occurrences - 1, 0)}{" "}
+            are not holding your money, and you will be told if the next one needs a top-up.
           </p>
         </div>
       )}
 
-      {/* ---- limits ---- */}
-      <div className="between" style={{marginBottom: 10}}>
-        <label className="label" style={{margin: 0}}>
-          Execution limits
-        </label>
-        <button type="button" className="btn btn-sm" onClick={() => setAdvanced(!advanced)}>
-          {advanced ? "Hide advanced" : "Advanced"}
-        </button>
-      </div>
-      <div className="grid grid-2" style={{marginBottom: 20}}>
-        <div>
-          <label className="label" htmlFor="slip">
-            Maximum slippage
+      {condition === "NEXT_REGULAR_SESSION" && !sessionOpen && (
+        <p className="note note-waiting mb-32 enter">
+          The regular session is closed, so this order will wait. It becomes eligible around{" "}
+          {formatLocal(nextOpen)}, and you can cancel and take the funds back at any point
+          before it executes.
+        </p>
+      )}
+
+      {condition === "WHEN_AVAILABLE" && (
+        <p className="note mb-32 enter">
+          Your funds stay reserved until this asset is tradable on X Layer, or until your
+          deadline — whichever comes first. Nothing is spent in the meantime.
+        </p>
+      )}
+
+      {/* ---------- 4. limits, folded ---------- */}
+      <div className="mb-32">
+        <div className="between mb-12">
+          <label className="field-label" style={{margin: 0}}>
+            Execution limits
           </label>
-          <select
-            id="slip"
-            className="select"
-            value={slippageBps}
-            onChange={(e) => setSlippageBps(Number(e.target.value))}
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost"
+            onClick={() => setAdvanced(!advanced)}
           >
-            <option value={25}>0.25%</option>
-            <option value={50}>0.50%</option>
-            <option value={75}>0.75% (default)</option>
-            <option value={100}>1.00%</option>
-          </select>
+            {advanced ? "Hide" : "Advanced"}
+          </button>
         </div>
-        {condition !== "IMMEDIATE" && (
+
+        <div style={{display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr"}}>
           <div>
-            <label className="label" htmlFor="deadline">
-              Cancel if not executed within
+            <label className="field-label" htmlFor="slip">
+              Maximum slippage
             </label>
             <select
-              id="deadline"
+              id="slip"
               className="select"
-              value={deadlineDays}
-              onChange={(e) => setDeadlineDays(Number(e.target.value))}
+              value={slippageBps}
+              onChange={(e) => setSlippageBps(Number(e.target.value))}
             >
-              <option value={1}>1 day</option>
-              <option value={7}>7 days</option>
-              <option value={30}>30 days</option>
-              <option value={90}>90 days</option>
+              <option value={25}>0.25%</option>
+              <option value={50}>0.50%</option>
+              <option value={75}>0.75%</option>
+              <option value={100}>1.00%</option>
             </select>
           </div>
-        )}
-      </div>
+          {condition !== "IMMEDIATE" && (
+            <div>
+              <label className="field-label" htmlFor="deadline">
+                Cancel if not executed within
+              </label>
+              <select
+                id="deadline"
+                className="select"
+                value={deadlineDays}
+                onChange={(e) => setDeadlineDays(Number(e.target.value))}
+              >
+                <option value={1}>1 day</option>
+                <option value={7}>7 days</option>
+                <option value={30}>30 days</option>
+                <option value={90}>90 days</option>
+              </select>
+            </div>
+          )}
+        </div>
 
-      {advanced && (
-        <div className="notice" style={{marginBottom: 20}}>
-          <dl className="kv">
+        {advanced && (
+          <dl className="kv quiet mt-16 enter">
             <dt>Quote freshness</dt>
             <dd>30s — a route older than this is refused</dd>
             <dt>Condition freshness</dt>
-            <dd>60s — a market reading older than this cannot make the order eligible</dd>
-            <dt>Receiver</dt>
-            <dd>{address ?? "your connected wallet"}</dd>
-            <dt>You will receive</dt>
+            <dd>60s — an older market reading cannot make this eligible</dd>
+            <dt>Delivered to</dt>
+            <dd className="mono">{address ?? "your connected wallet"}</dd>
+            <dt>You receive</dt>
             <dd>
               {asset.deliveredInstrument === "wrapped" ? "wrapped " : ""}
-              {asset.symbol} at {asset.outputToken}
+              {asset.symbol}
             </dd>
           </dl>
-        </div>
-      )}
-
-      {/* ---- funding ---- */}
-      <div className="notice" style={{marginBottom: 16}}>
-        <div className="between">
-          <span>Vault available</span>
-          <strong className="mono">
-            {vault.available === null ? "—" : `${vault.availableFormatted} ${stable.symbol}`}
-          </strong>
-        </div>
-        <div className="between">
-          <span>Reserved by existing orders</span>
-          <span className="mono">
-            {vault.reserved === null ? "—" : `${vault.reservedFormatted} ${stable.symbol}`}
-          </span>
-        </div>
-        <div className="between">
-          <span>Required for this order</span>
-          <span className="mono">
-            {amount || "0"} {stable.symbol}
-          </span>
-        </div>
+        )}
       </div>
 
-      {needsTopUp && (
-        <div className="notice notice-wait" style={{marginBottom: 16}}>
-          You need {vault.format(shortfall)} more {stable.symbol} in your vault.{" "}
-          <a href="/vault" style={{textDecoration: "underline"}}>
-            Deposit to your vault
-          </a>
+      {/* ---------- 5. the instruction, said back ---------- */}
+      <div className="quiet mb-24">
+        <p className="sentence" style={{margin: 0}}>
+          Buy{" "}
+          <span className={hasAmount ? "said" : "pending"}>
+            {hasAmount ? `$${amount}` : "some amount"} of {asset.underlyingSymbol}
+          </span>
+          <br />
+          <span className="said">{sentenceFor(condition, intervalDays, occurrences)}</span>
+          <br />
+          within {(slippageBps / 100).toFixed(2)}% slippage
+          {condition !== "IMMEDIATE" ? `, expiring in ${deadlineDays} days` : ""}.
+        </p>
+      </div>
+
+      {/* ---------- 6. funding + confirm ---------- */}
+      {isConnected && (
+        <div className="between small mb-16">
+          <span className="muted">Available in your vault</span>
+          <span className="strong">
+            {vault.availableFormatted} {stable.symbol}
+          </span>
         </div>
       )}
 
-      {/* ---- confirm ---- */}
-      {amountRaw > 0n && (
-        <div className="card" style={{background: "var(--surface-2)", marginBottom: 16}}>
-          <div className="stack" style={{gap: 6}}>
-            <div className="between">
-              <span className="muted small">Buy</span>
-              <strong>
-                {amount} {stable.symbol} of {asset.underlyingSymbol}
-                {condition === "RECURRING" ? `, ${occurrences} times` : ""}
-              </strong>
-            </div>
-            <div className="between">
-              <span className="muted small">Condition</span>
-              <span>{CONDITIONS.find((c) => c.key === condition)!.title}</span>
-            </div>
-            <div className="between">
-              <span className="muted small">Maximum slippage</span>
-              <span>{(slippageBps / 100).toFixed(2)}%</span>
-            </div>
-            {condition !== "IMMEDIATE" && (
-              <div className="between">
-                <span className="muted small">Deadline</span>
-                <span>{formatLocal(deadline)}</span>
-              </div>
-            )}
-            <div className="between">
-              <span className="muted small">Delivered to</span>
-              <span className="mono">{address ?? "connect a wallet"}</span>
-            </div>
-          </div>
-        </div>
+      {needsTopUp && (
+        <p className="note note-waiting mb-16">
+          You need {vault.format(shortfall)} more {stable.symbol}.{" "}
+          <a href="/vault" style={{textDecoration: "underline"}}>
+            Add funds to your vault
+          </a>
+        </p>
       )}
 
       <button
-        className="btn btn-primary"
-        style={{width: "100%"}}
+        className="btn btn-primary btn-lg btn-block"
         disabled={!canSubmit}
         onClick={() =>
           create.submit({
@@ -353,13 +369,11 @@ export function OrderComposer({
             stable,
             amountRaw,
             condition:
-              condition === "RECURRING"
-                ? TriggerType.NEXT_REGULAR_SESSION
-                : condition === "IMMEDIATE"
-                  ? TriggerType.IMMEDIATE
-                  : condition === "WHEN_AVAILABLE"
-                    ? TriggerType.WHEN_AVAILABLE
-                    : TriggerType.NEXT_REGULAR_SESSION,
+              condition === "IMMEDIATE"
+                ? TriggerType.IMMEDIATE
+                : condition === "WHEN_AVAILABLE"
+                  ? TriggerType.WHEN_AVAILABLE
+                  : TriggerType.NEXT_REGULAR_SESSION,
             recurring: condition === "RECURRING" ? {intervalDays, occurrences} : null,
             slippageBps,
             deadlineDays,
@@ -369,22 +383,24 @@ export function OrderComposer({
       >
         {!isConnected
           ? "Connect a wallet to continue"
-          : amountRaw === 0n
+          : !hasAmount
             ? "Enter an amount"
             : needsTopUp
               ? "Not enough in your vault"
               : create.isPending
                 ? "Confirm in your wallet…"
-                : "Confirm and reserve"}
+                : condition === "IMMEDIATE"
+                  ? "Review and buy"
+                  : "Confirm and reserve"}
       </button>
 
       {create.error && (
-        <p className="tiny" style={{color: "var(--negative)", marginBottom: 0}}>
+        <p className="tiny mt-12" style={{color: "var(--failed)", marginBottom: 0}}>
           {create.error}
         </p>
       )}
       {create.orderId && (
-        <p className="tiny" style={{marginBottom: 0}}>
+        <p className="tiny mt-12" style={{marginBottom: 0}}>
           Order created.{" "}
           <a href="/orders" style={{textDecoration: "underline"}}>
             View your orders
@@ -392,10 +408,23 @@ export function OrderComposer({
         </p>
       )}
 
-      <p className="tiny muted" style={{marginTop: 12, marginBottom: 0}}>
-        You can cancel while the order is still waiting and your reserved funds become
-        available again immediately.
+      <p className="tiny faint mt-12" style={{marginBottom: 0}}>
+        You can cancel while the order is waiting, and your reserved funds become available
+        again immediately.
       </p>
     </div>
   );
+}
+
+function sentenceFor(c: Condition, intervalDays: number, occurrences: number): string {
+  switch (c) {
+    case "IMMEDIATE":
+      return "right now";
+    case "NEXT_REGULAR_SESSION":
+      return "at the next regular session";
+    case "WHEN_AVAILABLE":
+      return "when it becomes available on X Layer";
+    case "RECURRING":
+      return `every ${intervalDays === 7 ? "week" : intervalDays === 14 ? "2 weeks" : "month"}, ${occurrences} times, at the regular session`;
+  }
 }
