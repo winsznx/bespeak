@@ -2,9 +2,11 @@ import Link from "next/link";
 import {explorerTx} from "@bespeak/shared";
 import {formatAmount, formatUtc} from "@/lib/format";
 import type {StoredReceipt} from "@/lib/receipts";
+import {AssetGlyph} from "./ui/AssetGlyph";
 
 export interface ReceiptViewProps {
   receipt: StoredReceipt | null;
+  symbol: string;
   underlyingSymbol: string;
   assetName: string;
   inputSymbol: string;
@@ -15,8 +17,11 @@ export interface ReceiptViewProps {
   conditionLabel: string;
 }
 
-/// The receipt, as a presentational component so the real page and the design preview
-/// render byte-identical markup. A preview that drifts from the product is worse than none.
+/// The completion surface.
+///
+/// It answers, in order, what a person actually asks: what happened, did my condition hold,
+/// what did I spend, what did I receive, and where is it. Routers, tiers, blocks and hashes
+/// are all kept — one layer down, under "Verify execution".
 export function ReceiptView(p: ReceiptViewProps) {
   const {receipt} = p;
   const verified = receipt?.finalOutcomeStatus === "VERIFIED_FILLED";
@@ -24,13 +29,16 @@ export function ReceiptView(p: ReceiptViewProps) {
   return (
     <>
       <div className="settle">
-        <div className="row gap-12 mb-24">
+        <div className="row g4" style={{marginBottom: 28}}>
           <Seal verified={verified} />
-          <div>
-            <h1 style={{marginBottom: 2}}>
+          <div style={{minWidth: 0}}>
+            <h1 className="t-h1" style={{fontSize: "clamp(26px,3.2vw,38px)", marginBottom: 4}}>
               {verified ? "Purchase complete" : "Execution recorded"}
             </h1>
-            <div className="tiny faint">{p.assetName}</div>
+            <div className="row g2 t-sm muted">
+              <AssetGlyph symbol={p.symbol} size={20} />
+              {p.underlyingSymbol} · {p.assetName}
+            </div>
           </div>
         </div>
 
@@ -43,43 +51,63 @@ export function ReceiptView(p: ReceiptViewProps) {
               borderBottom: "1px solid var(--line)",
             }}
           >
-            <div style={{padding: "24px 24px 24px 0"}}>
-              <div className="overline mb-8">Spent</div>
-              <div className="figure">
+            <div style={{padding: "26px 26px 26px 0"}}>
+              <div className="t-label" style={{marginBottom: 9}}>
+                Spent
+              </div>
+              <div className="t-figure">
                 ${formatAmount(BigInt(receipt.actualInputSpent), p.inputDecimals)}
               </div>
-              <div className="tiny faint mt-4">{p.inputSymbol}</div>
+              <div className="t-xs faint" style={{marginTop: 5}}>
+                {p.inputSymbol}
+              </div>
             </div>
-            <div style={{padding: "24px 0"}}>
-              <div className="overline mb-8">Received</div>
-              <div className="figure" style={{color: "var(--filled)"}}>
+            <div style={{padding: "26px 0 26px 26px", borderLeft: "1px solid var(--line)"}}>
+              <div className="t-label" style={{marginBottom: 9}}>
+                Received
+              </div>
+              <div className="t-figure" style={{color: "var(--success)"}}>
                 {formatAmount(BigInt(receipt.actualOutputReceived), p.outputDecimals, 6)}
               </div>
-              <div className="tiny faint mt-4">{p.outputSymbol}</div>
+              <div className="t-xs faint" style={{marginTop: 5}}>
+                {p.outputSymbol}
+              </div>
             </div>
           </div>
         ) : (
-          <p className="note mb-24">
-            This order is recorded as filled on chain. The verification record is not
-            available on this server.
+          <p className="t-sm muted prose" style={{margin: "0 0 24px"}}>
+            This order is recorded as filled on chain. The independent verification record is
+            not available on this server.
           </p>
         )}
 
-        <div className="mt-24 mb-24">
+        <div style={{margin: "26px 0"}}>
           {verified ? (
-            <div className="row gap-8" style={{color: "var(--filled)"}}>
+            <div className="row g2" style={{color: "var(--success)"}}>
               <Tick />
-              <span className="small strong">Executed under your requested condition</span>
+              <span className="t-body" style={{fontWeight: 500}}>
+                Verified under your requested condition
+              </span>
             </div>
           ) : (
-            <div className="note note-waiting">
-              <strong>{humanOutcome(receipt?.finalOutcomeStatus)}</strong>
-              <br />
-              The transaction was included, but Bespeak could not independently confirm every
-              expected consequence. It is deliberately not shown as complete.
+            <div
+              style={{
+                borderRadius: "var(--r-control)",
+                background: "var(--waiting-soft)",
+                border: "1px solid var(--waiting-line)",
+                padding: "14px 16px",
+              }}
+            >
+              <div className="t-h4" style={{color: "var(--waiting)", marginBottom: 4}}>
+                {humanOutcome(receipt?.finalOutcomeStatus)}
+              </div>
+              <p className="t-sm prose" style={{margin: 0, color: "var(--waiting)"}}>
+                The transaction was included, but Bespeak could not independently confirm every
+                expected consequence. It is deliberately not shown as complete.
+              </p>
             </div>
           )}
-          <div className="small muted mt-8">
+          <div className="t-sm muted" style={{marginTop: 8}}>
             {p.conditionLabel}
             {receipt?.transactionSubmittedAt && (
               <> · {formatUtc(new Date(receipt.transactionSubmittedAt))}</>
@@ -87,40 +115,54 @@ export function ReceiptView(p: ReceiptViewProps) {
           </div>
         </div>
 
-        <div className="quiet mb-24">
-          <div className="overline mb-4">Delivered to your wallet</div>
+        <div
+          style={{
+            background: "var(--surface-2)",
+            borderRadius: "var(--r-control)",
+            padding: "16px 18px",
+            marginBottom: 24,
+          }}
+        >
+          <div className="t-label" style={{marginBottom: 6}}>
+            Delivered to your wallet
+          </div>
           <div className="mono">{p.receiver}</div>
         </div>
 
-        {receipt?.transactionHash && (
-          <a
-            className="btn"
-            href={explorerTx(receipt.transactionHash)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View on X Layer explorer
-          </a>
-        )}
+        <div className="row wrap g2">
+          {receipt?.transactionHash && (
+            <a
+              className="btn"
+              href={explorerTx(receipt.transactionHash)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View on X Layer explorer
+            </a>
+          )}
+          <Link href="/orders" className="btn btn-quiet">
+            Back to orders
+          </Link>
+        </div>
       </div>
 
       {receipt && (
-        <div className="mt-32">
+        <div style={{marginTop: 34}}>
           <details className="tech">
             <summary>Verify execution</summary>
-            <div style={{paddingBottom: 24}}>
-              <p className="body-2 prose mb-16" style={{marginTop: 0}}>
+            <div style={{paddingBottom: 26}}>
+              <p className="t-sm muted prose" style={{marginTop: 0, marginBottom: 18}}>
                 Bespeak re-read X Layer through a different connection than the one used to
                 send the transaction, and checked each of these independently.
               </p>
-              <table className="table mb-24">
+              <table className="table" style={{marginBottom: 24}}>
                 <tbody>
                   {receipt.verificationChecks.map((c) => (
                     <tr key={c.name}>
-                      <td style={{width: 22, color: c.passed ? "var(--filled)" : "var(--failed)"}}>
+                      <td style={{width: 24, color: c.passed ? "var(--success)" : "var(--danger)"}}>
                         {c.passed ? "✓" : "✗"}
                       </td>
-                      <td className="small">{c.name}</td>
+                      <td className="t-sm">{c.name}</td>
                       <td className="num mono">{c.observed}</td>
                     </tr>
                   ))}
@@ -137,6 +179,8 @@ export function ReceiptView(p: ReceiptViewProps) {
                 <dd className="mono">{receipt.blockNumber}</dd>
                 <dt>Router</dt>
                 <dd className="mono">{receipt.routerAddress ?? "n/a"}</dd>
+                <dt>Approval target</dt>
+                <dd className="mono">{receipt.approvalTarget ?? "n/a"}</dd>
                 <dt>Receipt id</dt>
                 <dd className="mono">{receipt.receiptId}</dd>
               </dl>
@@ -145,8 +189,8 @@ export function ReceiptView(p: ReceiptViewProps) {
 
           <details className="tech">
             <summary>Market condition and its limitations</summary>
-            <div style={{paddingBottom: 24}}>
-              <dl className="kv mb-16">
+            <div style={{paddingBottom: 26}}>
+              <dl className="kv" style={{marginBottom: 18}}>
                 <dt>Source</dt>
                 <dd className="mono">{receipt.conditionSource}</dd>
                 <dt>Trust tier</dt>
@@ -155,8 +199,10 @@ export function ReceiptView(p: ReceiptViewProps) {
                 <dd>{receipt.marketStatus}</dd>
                 <dt>Observed at</dt>
                 <dd className="mono">{receipt.conditionObservationTimestamp ?? "n/a"}</dd>
+                <dt>Source payload hash</dt>
+                <dd className="mono">{receipt.conditionSourcePayloadHash ?? "n/a"}</dd>
               </dl>
-              <ul className="tiny muted prose" style={{margin: 0, paddingLeft: 18}}>
+              <ul className="t-sm muted prose" style={{margin: 0, paddingLeft: 18}}>
                 {receipt.limitations.map((l) => (
                   <li key={l} style={{marginBottom: 8}}>
                     {l}
@@ -165,38 +211,50 @@ export function ReceiptView(p: ReceiptViewProps) {
               </ul>
             </div>
           </details>
+
+          <details className="tech">
+            <summary>Machine-readable receipt</summary>
+            <pre
+              className="mono"
+              style={{
+                overflowX: "auto",
+                whiteSpace: "pre-wrap",
+                background: "var(--surface-2)",
+                borderRadius: "var(--r-control)",
+                padding: 16,
+                marginBottom: 26,
+              }}
+            >
+              {JSON.stringify(receipt, null, 2)}
+            </pre>
+          </details>
         </div>
       )}
-
-      <div className="mt-24">
-        <Link href="/orders" className="tiny muted">
-          &larr; Back to orders
-        </Link>
-      </div>
     </>
   );
 }
 
 function Seal({verified}: {verified: boolean}) {
+  const size = 52;
   if (!verified) {
     return (
-      <span style={{width: 44, height: 44, flex: "none", display: "grid", placeItems: "center"}}>
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-          <circle cx="22" cy="22" r="21" fill="var(--waiting-soft)" stroke="var(--waiting-line)" />
-          <path d="M22 13v11" stroke="var(--waiting)" strokeWidth="2.4" strokeLinecap="round" />
-          <circle cx="22" cy="30" r="1.5" fill="var(--waiting)" />
+      <span style={{width: size, height: size, flex: "none", display: "grid", placeItems: "center"}}>
+        <svg width={size} height={size} viewBox="0 0 52 52" fill="none">
+          <circle cx="26" cy="26" r="25" fill="var(--waiting-soft)" stroke="var(--waiting-line)" />
+          <path d="M26 15v13" stroke="var(--waiting)" strokeWidth="2.6" strokeLinecap="round" />
+          <circle cx="26" cy="35" r="1.8" fill="var(--waiting)" />
         </svg>
       </span>
     );
   }
   return (
-    <span style={{width: 44, height: 44, flex: "none", display: "grid", placeItems: "center"}}>
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" className="check-draw">
-        <circle cx="22" cy="22" r="21" fill="var(--filled-soft)" stroke="var(--filled-line)" />
+    <span style={{width: size, height: size, flex: "none", display: "grid", placeItems: "center"}}>
+      <svg width={size} height={size} viewBox="0 0 52 52" fill="none" className="draw">
+        <circle cx="26" cy="26" r="25" fill="var(--success-soft)" stroke="var(--success-line)" />
         <path
-          d="M14 22.4l5.4 5.4L30.6 16.6"
-          stroke="var(--filled)"
-          strokeWidth="2.5"
+          d="M17 26.6l6.3 6.3L36 20.2"
+          stroke="var(--success)"
+          strokeWidth="2.8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -207,7 +265,7 @@ function Seal({verified}: {verified: boolean}) {
 
 function Tick() {
   return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
         d="M3 8.4l3.2 3.2L13 4.8"
         stroke="currentColor"

@@ -24,12 +24,12 @@ export function RecurringList({assets, stables}: {assets: AssetLite[]; stables: 
   const {address} = useAccount();
   const {series, isLoading, refetch} = useRecurring(address);
 
-  if (isLoading) return <div className="empty">Loading…</div>;
+  if (isLoading) return <div className="module empty-state">Loading…</div>;
   if (series.length === 0) {
     return (
-      <div className="empty">
+      <div className="module empty-state">
         <p style={{marginTop: 0}}>No repeat purchases set up.</p>
-        <p className="small muted" style={{maxWidth: "46ch", margin: "0 auto 16px"}}>
+        <p className="t-sm muted" style={{maxWidth: "46ch", margin: "0 auto 16px"}}>
           A repeat instruction buys on a schedule, and still waits for the market condition
           you chose each time.
         </p>
@@ -41,7 +41,7 @@ export function RecurringList({assets, stables}: {assets: AssetLite[]; stables: 
   }
 
   return (
-    <div className="stack gap-12">
+    <div className="col g3">
       {series.map((r) => (
         <SeriesCard key={r.id} series={r} assets={assets} stables={stables} onChanged={refetch} />
       ))}
@@ -114,23 +114,23 @@ function SeriesCard({
   const cadence = interval === 7 ? "week" : interval === 14 ? "2 weeks" : `${interval} days`;
 
   return (
-    <div className="panel panel-pad">
+    <div className="module module-pad">
       <div className="between" style={{alignItems: "flex-start", marginBottom: 10}}>
-        <div className="stack">
+        <div className="col">
           <strong style={{fontSize: 16}}>
             {formatAmount(series.amountPerOccurrence, stable.decimals)} {stable.symbol} of{" "}
             {asset?.underlyingSymbol ?? "asset"}
           </strong>
-          <span className="small muted">Every {cadence}, during the regular session</span>
+          <span className="t-sm muted">Every {cadence}, during the regular session</span>
         </div>
         {!series.active ? (
-          <span className="badge badge-neutral">Finished</span>
+          <span className="chip chip-inactive">Finished</span>
         ) : series.paused ? (
-          <span className="badge badge-neutral">Paused</span>
+          <span className="chip chip-inactive">Paused</span>
         ) : needsTopUp ? (
-          <span className="badge badge-waiting">Needs top-up</span>
+          <span className="chip chip-waiting">Needs top-up</span>
         ) : (
-          <span className="badge badge-filled">
+          <span className="chip chip-success">
             <span className="dot" />
             Active
           </span>
@@ -162,13 +162,13 @@ function SeriesCard({
         </div>
       )}
 
-      <p className="tiny muted" style={{margin: "8px 0 0"}}>
+      <p className="t-xs muted" style={{margin: "8px 0 0"}}>
         Only the next purchase is ever funded. The other {Math.max(remaining, 0)} are not
         holding your money.
       </p>
 
       {needsTopUp && (
-        <div className="note note-waiting" style={{marginTop: 10}}>
+        <div className="chip-note-waiting" style={{marginTop: 10}}>
           Next purchase is waiting for funds. Add{" "}
           {vault.format(nextCost - (vault.available ?? 0n))} {stable.symbol} to your vault and
           it resumes — the series has not been cancelled.{" "}
@@ -178,7 +178,7 @@ function SeriesCard({
         </div>
       )}
 
-      <div className="row" style={{marginTop: 12}}>
+      <div className="row wrap g2" style={{marginTop: 14}}>
         {series.active && (
           <>
             <button className="btn btn-sm" disabled={Boolean(busy)} onClick={() => act("pauseRecurring", !series.paused)}>
@@ -196,11 +196,11 @@ function SeriesCard({
         )}
       </div>
       {err && (
-        <p className="tiny" style={{color: "var(--negative)", marginBottom: 0}}>
+        <p className="t-xs" style={{color: "var(--negative)", marginBottom: 0}}>
           {err}
         </p>
       )}
-      <p className="tiny muted" style={{marginTop: 8, marginBottom: 0}}>
+      <p className="t-xs muted" style={{marginTop: 8, marginBottom: 0}}>
         Stopping the series leaves completed purchases untouched.
       </p>
     </div>

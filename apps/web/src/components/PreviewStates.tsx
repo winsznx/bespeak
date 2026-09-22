@@ -91,6 +91,7 @@ export function PreviewStates() {
       <Labelled title="Receipt — verified fill">
         <ReceiptView
           receipt={SAMPLE_RECEIPT}
+          symbol="NVDAx"
           underlyingSymbol="NVDA"
           assetName="NVIDIA"
           inputSymbol="USDC"

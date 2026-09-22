@@ -66,3 +66,11 @@ export function nextRegularSessionOpen(from = new Date()): Date {
   }
   return d;
 }
+
+/// Compact UTC stamp for schedule display: "Tue · 13:30 UTC".
+export function formatUtcShort(date: Date): string {
+  const day = date.toLocaleDateString("en-US", {weekday: "short", timeZone: "UTC"});
+  const hh = String(date.getUTCHours()).padStart(2, "0");
+  const mm = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${day} · ${hh}:${mm} UTC`;
+}

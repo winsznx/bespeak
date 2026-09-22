@@ -1,14 +1,16 @@
 "use client";
 
 import {useState} from "react";
+import Link from "next/link";
 import {usePublicClient, useWriteContract} from "wagmi";
 import type {Address} from "viem";
 import {BespeakOrderManagerAbi} from "@bespeak/sdk";
 import {OrderStatus, TriggerType} from "@bespeak/shared";
 import {clientDeployment} from "@/lib/addresses";
-import {formatAmount, formatLocal} from "@/lib/format";
+import {formatAmount, formatUtcShort} from "@/lib/format";
 import type {OrderRecord} from "@/lib/useOrders";
 import type {MarketState} from "@/lib/useMarketState";
+import {AssetGlyph} from "@/components/ui/AssetGlyph";
 import {Countdown} from "./Countdown";
 
 interface AssetLite {
@@ -24,17 +26,12 @@ interface Stable {
   decimals: number;
 }
 
-const CONDITION: Record<number, string> = {
-  [TriggerType.IMMEDIATE]: "Buy now",
-  [TriggerType.NEXT_REGULAR_SESSION]: "the next regular session",
-  [TriggerType.WHEN_AVAILABLE]: "availability on X Layer",
-};
-
-/// A standing instruction, rendered as the object it is.
+/// A standing instruction as an object, with a different composition per state rather than
+/// the same card wearing a different badge.
 ///
-/// Waiting is a calm, stable state — Bespeak is holding the instruction, nothing is broken
-/// — so it gets breathing room, a single quiet amber accent and no spinner. A filled order
-/// is a different object entirely rather than the same card with a different badge.
+/// Waiting is calm and gives the condition prominence — Bespeak is holding the instruction,
+/// nothing is broken. Held raises attention without implying failure. Filled is conclusive
+/// and lets the figures dominate. Cancelled and expired recede into history.
 export function OrderCard({
   order,
   assets,
@@ -81,51 +78,67 @@ export function OrderCard({
     }
   }
 
-  // ---- filled: decisive, green, the asset becomes the dominant figure ----
+  // ---- filled ----
   if (order.status === OrderStatus.FILLED) {
     return (
-      <article className="panel panel-pad settle" style={{borderColor: "var(--filled-line)"}}>
-        <div className="between mb-16" style={{alignItems: "flex-start"}}>
-          <div className="row gap-12">
-            <CheckMark />
-            <div>
-              <div className="h2">{symbol} purchased</div>
-              <div className="tiny faint">
-                Executed under {CONDITION[order.triggerType] ?? "your condition"}
+      <article
+        className="module settle"
+        style={{borderColor: "var(--success-line)", overflow: "hidden"}}
+      >
+        <div className="module-pad">
+          <div className="between" style={{alignItems: "flex-start", marginBottom: 18}}>
+            <div className="row g3">
+              <Seal />
+              <div>
+                <div className="t-h3">{symbol} purchased</div>
+                <div className="t-xs faint">
+                  Executed under {conditionPhrase(order.triggerType)}
+                </div>
               </div>
             </div>
+            <span className="chip chip-success">Verified</span>
           </div>
-          <a className="btn btn-sm" href={`/receipt/${order.id}`}>
-            Receipt
-          </a>
+          <div className="t-figure" style={{color: "var(--success)"}}>
+            ${amount}
+          </div>
+          <div className="t-xs faint" style={{marginTop: 4}}>
+            spent from your vault · {stable?.symbol}
+          </div>
         </div>
-        <div className="figure" style={{color: "var(--filled)"}}>
-          ${amount}
+        <div
+          className="row g2"
+          style={{padding: "14px 24px", borderTop: "1px solid var(--line)", background: "var(--surface-2)"}}
+        >
+          <Link href={`/receipt/${order.id}`} className="btn btn-sm">
+            View receipt
+          </Link>
         </div>
-        <div className="tiny faint mt-4">spent from your vault</div>
       </article>
     );
   }
 
-  // ---- terminal, historical: neutral, never alarming ----
+  // ---- historical ----
   if (order.status === OrderStatus.CANCELLED || order.status === OrderStatus.EXPIRED) {
     return (
       <article
-        className="panel panel-pad"
-        style={{background: "var(--surface-quiet)", boxShadow: "none"}}
+        className="module module-pad"
+        style={{background: "var(--surface-2)", borderColor: "transparent"}}
       >
         <div className="between">
-          <div>
-            <div className="strong">
-              ${amount} of {symbol}
-            </div>
-            <div className="tiny faint mt-4">
-              {order.status === OrderStatus.CANCELLED
-                ? "Cancelled — funds returned to your vault"
-                : "Expired without executing — funds returned to your vault"}
+          <div className="row g3" style={{minWidth: 0}}>
+            <AssetGlyph symbol={asset?.symbol ?? "??"} size={34} />
+            <div style={{minWidth: 0}}>
+              <div className="t-h4">
+                ${amount} of {symbol}
+              </div>
+              <div className="t-xs faint truncate">
+                {order.status === OrderStatus.CANCELLED
+                  ? "Cancelled — funds returned to your vault"
+                  : "Expired without executing — funds returned"}
+              </div>
             </div>
           </div>
-          <span className="badge badge-neutral">
+          <span className="chip chip-inactive">
             {order.status === OrderStatus.CANCELLED ? "Cancelled" : "Expired"}
           </span>
         </div>
@@ -133,52 +146,69 @@ export function OrderCard({
     );
   }
 
-  // ---- waiting: Bespeak is holding the instruction ----
+  // ---- waiting / held ----
   const explain = explainWait(order, market, sourceReachable);
 
   return (
-    <article className="panel panel-pad">
-      <div className="between mb-24" style={{alignItems: "flex-start"}}>
-        <div>
-          <div className="h2 mb-4">{symbol}</div>
-          <div className="tiny faint">
-            {order.triggerType === TriggerType.WHEN_AVAILABLE
-              ? "Waiting for availability on X Layer"
-              : order.triggerType === TriggerType.IMMEDIATE
-                ? "Queued for execution"
-                : "Waiting for the regular session"}
+    <article className="module module-pad">
+      <div className="between" style={{alignItems: "flex-start", marginBottom: 20}}>
+        <div className="row g3" style={{minWidth: 0}}>
+          <AssetGlyph symbol={asset?.symbol ?? "??"} size={38} />
+          <div style={{minWidth: 0}}>
+            <div className="t-h3">{symbol}</div>
+            <div className="t-xs faint truncate">{conditionPhrase(order.triggerType)}</div>
           </div>
         </div>
-        <span className="badge badge-waiting">
+        <span className="chip chip-waiting">
           <span className="dot" />
           {explain.attention ? "Needs attention" : "Waiting"}
         </span>
       </div>
 
-      <div className="figure-sm mb-4">${amount}</div>
-      <div className="tiny faint mb-24">reserved · {stable?.symbol ?? ""}</div>
+      <div className="row wrap g8" style={{marginBottom: 20}}>
+        <div>
+          <div className="t-label" style={{marginBottom: 6}}>
+            Reserved
+          </div>
+          <div className="t-figure-sm">${amount}</div>
+        </div>
+        {order.triggerType === TriggerType.NEXT_REGULAR_SESSION && market?.nextChangeAt && (
+          <div>
+            <div className="t-label" style={{marginBottom: 6}}>
+              Session changes in
+            </div>
+            <div className="t-figure-sm">
+              <Countdown to={market.nextChangeAt} />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div
-        className="quiet mb-16"
-        style={
-          explain.attention
-            ? {background: "var(--waiting-soft)", border: "1px solid var(--waiting-line)"}
-            : undefined
-        }
+        style={{
+          borderRadius: "var(--r-control)",
+          padding: "14px 16px",
+          marginBottom: 16,
+          background: explain.attention ? "var(--waiting-soft)" : "var(--surface-2)",
+          border: `1px solid ${explain.attention ? "var(--waiting-line)" : "transparent"}`,
+        }}
       >
-        <div className="small" style={{color: explain.attention ? "var(--waiting)" : "var(--text)"}}>
+        <div
+          className="t-sm"
+          style={{color: explain.attention ? "var(--waiting)" : "var(--ink)", fontWeight: 500}}
+        >
           {explain.headline}
         </div>
         {explain.detail && (
-          <div className="tiny muted mt-4" style={{fontVariantNumeric: "normal"}}>
+          <div className="t-xs muted prose" style={{marginTop: 4}}>
             {explain.detail}
           </div>
         )}
       </div>
 
       <div className="between">
-        <span className="tiny faint">
-          Expires {formatLocal(new Date(Number(order.expiresAt) * 1000))}
+        <span className="t-xs faint">
+          Expires {formatUtcShort(new Date(Number(order.expiresAt) * 1000))}
         </span>
         <button className="btn btn-sm" onClick={cancel} disabled={busy}>
           {busy ? "Cancelling…" : "Cancel"}
@@ -186,7 +216,7 @@ export function OrderCard({
       </div>
 
       {err && (
-        <p className="tiny mt-12" style={{color: "var(--failed)", marginBottom: 0}}>
+        <p className="t-sm" style={{color: "var(--danger)", margin: "12px 0 0"}}>
           {err}
         </p>
       )}
@@ -194,23 +224,15 @@ export function OrderCard({
   );
 }
 
-function CheckMark() {
+function Seal() {
   return (
-    <span
-      style={{
-        width: 36,
-        height: 36,
-        flex: "none",
-        display: "grid",
-        placeItems: "center",
-      }}
-    >
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" className="check-draw">
-        <circle cx="18" cy="18" r="17" fill="var(--filled-soft)" stroke="var(--filled-line)" />
+    <span style={{width: 38, height: 38, flex: "none", display: "grid", placeItems: "center"}}>
+      <svg width="38" height="38" viewBox="0 0 38 38" fill="none" className="draw">
+        <circle cx="19" cy="19" r="18" fill="var(--success-soft)" stroke="var(--success-line)" />
         <path
-          d="M11.5 18.3l4.4 4.4 8.6-8.8"
-          stroke="var(--filled)"
-          strokeWidth="2.1"
+          d="M12 19.4l4.6 4.6L26 14.6"
+          stroke="var(--success)"
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -219,10 +241,6 @@ function CheckMark() {
   );
 }
 
-/// What is actually holding this order, in the user's own terms.
-///
-/// A projection, not authority: the contract decides eligibility. This explains the most
-/// likely current reason so a user never has to ask a developer why nothing has happened.
 function explainWait(
   order: OrderRecord,
   market: MarketState | undefined,
@@ -233,21 +251,18 @@ function explainWait(
   if (Number(order.validAfter) * 1000 > now) {
     return {
       headline: "Scheduled to start later",
-      detail: `Starts ${formatLocal(new Date(Number(order.validAfter) * 1000))}.`,
+      detail: `Starts ${formatUtcShort(new Date(Number(order.validAfter) * 1000))}.`,
     };
   }
-
   if (order.triggerType === TriggerType.IMMEDIATE) {
     return {headline: "Queued for execution on the next pass."};
   }
-
   if (order.triggerType === TriggerType.WHEN_AVAILABLE) {
     return {
       headline: "Waiting for this asset to become tradable on X Layer.",
-      detail: "Your funds stay reserved until it is, or until the deadline — whichever comes first.",
+      detail: "Funds stay reserved until it is, or until the deadline — whichever comes first.",
     };
   }
-
   if (!sourceReachable || !market) {
     return {
       headline: "The market session cannot be read right now.",
@@ -255,7 +270,6 @@ function explainWait(
       attention: true,
     };
   }
-
   if (market.halted) {
     return {
       headline: `Trading in ${market.underlyingSymbol} is halted.`,
@@ -263,24 +277,15 @@ function explainWait(
       attention: true,
     };
   }
-
   if (market.eligibleForRegularSession) {
     return {
       headline: "The regular session is open — this order is eligible.",
       detail: "If it has not executed, the current price is outside the limit you set.",
     };
   }
-
   return {
     headline: "Waiting for the regular session.",
-    detail: market.nextChangeAt ? (
-      <>
-        Market is {phrase(market.marketStatus)}. Session state changes in{" "}
-        <Countdown to={market.nextChangeAt} />.
-      </>
-    ) : (
-      `Market is ${phrase(market.marketStatus)}.`
-    ),
+    detail: `Market is ${phrase(market.marketStatus)}. Your funds stay reserved and are released the moment you cancel.`,
   };
 }
 
@@ -295,4 +300,10 @@ function phrase(status: string): string {
     default:
       return "in an unknown state";
   }
+}
+
+function conditionPhrase(t: number): string {
+  if (t === TriggerType.IMMEDIATE) return "Buy now";
+  if (t === TriggerType.NEXT_REGULAR_SESSION) return "the next regular session";
+  return "availability on X Layer";
 }
