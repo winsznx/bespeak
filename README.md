@@ -54,27 +54,34 @@ Bespeak makes, and what each rests on.
 | Asset identity comes from the issuer, not a ticker | Registry entries carry source URI, payload hash and fetch time; promotion to `SUPPORTED` requires a non-zero on-chain deployment | The issuer API exposes only the current (v2) wrapper; there is no field enumerating legacy wrappers |
 | Capital cannot be overspent or double-spent | Reservation accounting lives in the vault, not the order manager; fuzz-tested `available + reserved == balance` | — |
 | An order executes at most once | `FILLED` is written before any external call; `executionCount` is asserted by the verifier | — |
-| Market session is verified | **No.** It is *operator-attested* — see below | This is the honest weak point |
+| Market session is verified | **No.** It is *operator-attested* — see below | Tier 1 was not reproducible in this build; see below |
 | A fill is verified, not claimed | Independent RPC readback of receiver and vault balance deltas, separate from the broadcast path | A run that cannot be confirmed is reported as `OUTCOME_UNKNOWN`, not as success |
 
 ### The market-session source is Tier 3, and we say so everywhere
 
 The PRD's preferred design used Chainlink Data Streams. We checked, rather than assumed:
 
+- OKX **officially announced** Chainlink Data Streams on X Layer on 17 June 2026, including
+  24/5 US equity streams for TSLA, NVDA and AAPL.
 - The Data Streams **VerifierProxy 2.0.0 is genuinely live on X Layer** at
   `0xcE73c8ad08CBDEaCa6078BF0627C8fe0a9a536E7` — confirmed by direct `cast call`, not by
   reading a docs page.
 - The equity report schema (**v11 "RWA Advanced"**, not the v4 that older docs describe)
   really does carry a `marketStatus` field with the session values we need.
-- But Chainlink's own feed-tracking data lists US equity streams for Arbitrum, Base, BNB,
-  Ethereum, Optimism, Polygon and Robinhood Chain — and **zero equity entries for X Layer**,
-  despite the public announcement. Settling that needs a paid subscription.
 
-So Bespeak ships Tier 3 `ATTESTED_SESSION`, sourced from the **xStocks issuer's own
-published trading state** for the exact token being bought — which also reports halts a
-calendar cannot know. The keeper signs that observation as an EIP-712 attestation, and the
-contract verifies the signature and its freshness on chain, so the claim is non-repudiable
-and auditable afterwards rather than implicitly trusted.
+**What we could not do** is reproduce usable equity-stream delivery and on-chain
+verification for Bespeak using the feed catalog, credentials and public integration path
+available to us in this build. That is a statement about our own reproduction attempt, not
+about whether the streams exist — the announcement says they do, and we have no evidence
+contradicting it.
+
+Because a condition source Bespeak cannot itself exercise cannot be a condition source
+Bespeak depends on, Tier 1 stays unused and Bespeak ships Tier 3 `ATTESTED_SESSION`,
+sourced from the **xStocks issuer's own published trading state** for the exact token being
+bought — which also reports halts a calendar cannot know. The keeper signs that observation
+as an EIP-712 attestation, and the contract verifies the signature and its freshness on
+chain, so the claim is non-repudiable and auditable afterwards rather than implicitly
+trusted.
 
 **That is not trustless and Bespeak never calls it that.** Every receipt records the tier.
 Every order stores the weakest tier it will accept, so an order demanding something stronger
