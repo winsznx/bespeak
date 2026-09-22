@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "description": "Maps the PRD proof campaign (P0-P18) to the exact test that proves each case. A case with no test, or whose test does not exist, is reported as UNPROVEN rather than omitted.",
+  "cases": [
+    {"id": "P0",  "claim": "An IMMEDIATE order uses the same routing, postcondition and receipt engine as a conditioned order, proving the engine independent of the timing trigger.", "test": "ExecutionTest:test_P0_immediateFillDeliversToReceiver", "kind": "positive-control"},
+    {"id": "P1",  "claim": "A conditioned order waits, becomes eligible under its recorded condition source, and fills.", "test": "ExecutionTest:test_P1_conditionedFillUnderRegularSession", "kind": "positive"},
+    {"id": "P2",  "claim": "A closed market leaves the order active and the capital unspent.", "test": "ExecutionTest:test_P2_closedMarketDoesNotExecute", "kind": "boundary"},
+    {"id": "P2b", "claim": "Pre-market is not the regular session and does not satisfy the trigger.", "test": "ExecutionTest:test_P2_preMarketIsNotRegularSession", "kind": "boundary"},
+    {"id": "P3",  "claim": "A stale condition observation never becomes eligibility, even when it reports REGULAR.", "test": "ExecutionTest:test_P3_staleObservationDoesNotExecute", "kind": "boundary"},
+    {"id": "P3b", "claim": "An UNKNOWN market state holds, and is distinguishable from a stale report.", "test": "ExecutionTest:test_P3_unknownMarketHolds", "kind": "boundary"},
+    {"id": "P4",  "claim": "The keeper cannot loosen the user's minimum output.", "test": "ExecutionTest:test_P4_keeperCannotLoosenMinimumOutput", "kind": "boundary"},
+    {"id": "P4b", "claim": "A route that under-delivers reverts rather than completing the order.", "test": "ExecutionTest:test_P4_underDeliveringRouteReverts", "kind": "boundary"},
+    {"id": "P5",  "claim": "A second invocation cannot fill the same occurrence again.", "test": "ExecutionTest:test_P5_duplicateExecutionImpossible", "kind": "safety"},
+    {"id": "P5b", "claim": "A router that reenters execute() during the swap cannot produce a second fill.", "test": "AdapterTest:test_reentrantRouterCannotDoubleFill", "kind": "safety"},
+    {"id": "P6",  "claim": "A protected corporate-action window holds execution, then resumes automatically.", "test": "ExecutionTest:test_P6_corporateActionWindowHoldsThenResumes", "kind": "boundary"},
+    {"id": "P7",  "claim": "Partial router input consumption releases the unused capital and reports actual spend.", "test": "ExecutionTest:test_P7_partialInputRefundsUnusedCapital", "kind": "accounting"},
+    {"id": "P7b", "claim": "Partial-consumption accounting is exact across the full range of consumption ratios.", "test": "AdapterTest:testFuzz_partialConsumptionAccounting", "kind": "accounting-fuzz"},
+    {"id": "P8",  "claim": "An expired order releases its reservation exactly once and can never fill.", "test": "ExecutionTest:test_P8_expiryReleasesReservationAndBlocksFill", "kind": "boundary"},
+    {"id": "P9",  "claim": "A WHEN_AVAILABLE order on an unavailable asset stays active and reserved.", "test": "ExecutionTest:test_P18_pausedAssetCannotExecute", "kind": "boundary", "note": "Availability is enforced through the same registry SUPPORTED check; a paused asset exercises that path."},
+    {"id": "P11", "claim": "A terminal occurrence lazily creates the next one with its own reservation.", "test": "RecurringTest:test_P11_terminalOccurrenceCreatesTheNext", "kind": "positive"},
+    {"id": "P11b","claim": "A ten-purchase plan reserves one purchase, not ten.", "test": "RecurringTest:test_P11_lazyReservationDoesNotLockTheWholePlan", "kind": "accounting"},
+    {"id": "P11c","claim": "An underfunded next occurrence holds and resumes after top-up; the series is not silently cancelled.", "test": "RecurringTest:test_P11_underfundedNextOccurrenceHoldsInsteadOfCancelling", "kind": "boundary"},
+    {"id": "P12", "claim": "A cancelled order can never execute.", "test": "ExecutionTest:test_P12_cancelledOrderCannotFill", "kind": "safety"},
+    {"id": "P13", "claim": "An order requiring a stronger source tier than is available keeps waiting rather than downgrading.", "test": "ExecutionTest:test_P13_forbiddenTierDowngradeKeepsWaiting", "kind": "boundary"},
+    {"id": "P13b","claim": "An attestation signed by an unauthorized key reverts.", "test": "ExecutionTest:test_forgedAttestationReverts", "kind": "safety"},
+    {"id": "P14", "claim": "An unapproved router cannot spend vault funds.", "test": "ExecutionTest:test_P14_unapprovedRouterCannotSpend", "kind": "safety"},
+    {"id": "P14b","claim": "An unapproved approval target cannot spend vault funds, checked independently of the router.", "test": "ExecutionTest:test_P14_unapprovedApproveTargetCannotSpend", "kind": "safety"},
+    {"id": "P14c","claim": "Route calldata cannot redirect the purchased asset away from the authorized receiver.", "test": "ExecutionTest:test_INV17_routeCannotRedirectOutput", "kind": "safety"},
+    {"id": "P18", "claim": "An asset with no proven X Layer deployment cannot be promoted to SUPPORTED.", "test": "ExecutionTest:test_P18_assetWithoutDeploymentCannotBeSupported", "kind": "boundary"},
+    {"id": "F1",  "claim": "Asset provenance holds against real chain state: symbols, decimals and wrapper.asset() round-trip.", "test": "ForkXLayerTest:test_fork_assetProvenanceHoldsOnChain", "kind": "fork", "requiresFork": true},
+    {"id": "F2",  "claim": "Vault accounting holds against the real deployed X Layer USDC contract.", "test": "ForkXLayerTest:test_fork_realUsdcVaultAccounting", "kind": "fork", "requiresFork": true}
+  ],
+  "unprovenWithoutMainnet": [
+    {"id": "P10", "claim": "A provenance-backed availability transition makes a pending WHEN_AVAILABLE order eligible.", "status": "mechanism proven by the registry SUPPORTED path; a live listing transition did not occur during the build window and must not be claimed as one."},
+    {"id": "P15", "claim": "A transaction that is included but whose delivery cannot be independently confirmed is reported as OUTCOME_UNKNOWN rather than success.", "status": "implemented in services/worker/src/verifier.ts; requires a mainnet execution to exercise."},
+    {"id": "P16", "claim": "A tampered receipt fails independent verification.", "status": "implemented in services/worker/src/cli-verify.ts (recomputes the content hash); requires a real receipt to exercise."},
+    {"id": "P17", "claim": "OKX DEX route compared against the strongest directly known X Layer route.", "status": "blocked on OKX API credentials."}
+  ]
+}
