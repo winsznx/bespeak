@@ -5,3 +5,6 @@ packages:
 
 allowBuilds:
   esbuild: true
+  keccak: true
+  bufferutil: true
+  utf-8-validate: true

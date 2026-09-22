@@ -31,3 +31,7 @@ npm-debug.log*
 .DS_Store
 coverage/
 .turbo/
+
+# next
+apps/web/.next/
+apps/web/next-env.d.ts
