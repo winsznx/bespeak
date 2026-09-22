@@ -1,0 +1,33 @@
+# Private build room - never commit
+internal/
+
+# deps
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# contracts
+contracts/out/
+contracts/cache/
+contracts/broadcast/**/dry-run/
+contracts/lib/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# logs / os
+*.log
+npm-debug.log*
+.DS_Store
+coverage/
+.turbo/
