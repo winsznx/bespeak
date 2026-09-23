@@ -11,12 +11,16 @@ import {useMarketState} from "@/lib/useMarketState";
 import {OrderCard} from "./OrderCard";
 import {RecurringList} from "./RecurringList";
 import {Skeleton} from "./ui/Skeleton";
+import {ZeroState} from "./ZeroState";
+import {AssetIdentity, TokenIdentity} from "./identity";
+import {Countdown} from "./Countdown";
 
 interface AssetLite {
   assetId: string;
   symbol: string;
   underlyingSymbol: string;
   name: string;
+  payWith: string | null;
 }
 interface Stable {
   address: Address;
@@ -34,7 +38,17 @@ const TABS: Array<[Tab, string]> = [
   ["all", "All"],
 ];
 
-export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: Stable[]}) {
+export function OrdersClient({
+  assets,
+  stables,
+  nextOpenIso,
+  nextOpenLabel,
+}: {
+  assets: AssetLite[];
+  stables: Stable[];
+  nextOpenIso: string;
+  nextOpenLabel: string;
+}) {
   const {address, isConnected} = useAccount();
   const [tab, setTab] = useState<Tab>("active");
   const {orders, isLoading, refetch} = useOrderRecords(address);
@@ -91,15 +105,57 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
         ))}
       </div>
 
-      {!isConnected ? (
-        <EmptyState
-          title="Connect a wallet"
-          body="Your standing orders and their status appear here once a wallet is connected."
-        />
-      ) : !clientDeployment() ? (
-        <EmptyState
-          title="Not deployed on this network yet"
-          body="Bespeak's contracts are not live on X Layer yet, so there are no orders to show."
+      {!isConnected || !clientDeployment() || (!isLoading && shown.length === 0 && tab !== "recurring") ? (
+        <ZeroState
+          title={
+            !isConnected
+              ? "Connect a wallet to see your orders"
+              : !clientDeployment()
+                ? "Not deployed on this network yet"
+                : tab === "completed"
+                  ? "No completed purchases yet"
+                  : "No standing orders yet"
+          }
+          body={
+            !isConnected
+              ? "Your standing instructions and their status live here. Each one shows exactly what it is waiting for, and you can cancel and take the funds back at any time."
+              : !clientDeployment()
+                ? "Bespeak's contracts are not live on X Layer yet. Market data is live and you can explore what is supported in the meantime."
+                : tab === "completed"
+                  ? "Completed purchases appear here with a receipt you can verify independently against X Layer."
+                  : "Choose an asset, choose when Bespeak may buy it, and it waits for that condition without you keeping a browser open."
+          }
+          primary={{href: "/markets", label: "Set an order"}}
+          {...(isConnected ? {secondary: {href: "/vault", label: "Deposit"}} : {})}
+          contextTitle="Next market moment"
+          context={
+            <>
+              <div className="t-figure-sm" style={{marginBottom: 4}}>
+                <Countdown to={nextOpenIso} />
+              </div>
+              <div className="t-sm muted" style={{marginBottom: 18}}>
+                Regular session opens {nextOpenLabel}
+              </div>
+              <div className="t-label" style={{marginBottom: 12}}>
+                Ready to schedule
+              </div>
+              <div className="col g4">
+                {assets.slice(0, 3).map((a) => (
+                  <Link href={`/asset/${a.symbol}`} className="row g3" key={a.assetId}>
+                    <div className="grow" style={{minWidth: 0}}>
+                      <AssetIdentity
+                        symbol={a.symbol}
+                        underlyingSymbol={a.underlyingSymbol}
+                        variant="row"
+                        sub={a.name}
+                      />
+                    </div>
+                    {a.payWith && <TokenIdentity symbol={a.payWith} size="xs" showLabel={false} />}
+                  </Link>
+                ))}
+              </div>
+            </>
+          }
         />
       ) : tab === "recurring" ? (
         <RecurringList assets={assets} stables={stables} />
@@ -120,16 +176,6 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
             </div>
           ))}
         </div>
-      ) : shown.length === 0 ? (
-        <EmptyState
-          title={tab === "active" ? "Nothing waiting" : "Nothing here yet"}
-          body={
-            tab === "active"
-              ? "When you set an order it appears here with the condition it is waiting for."
-              : "Completed purchases will appear here with their receipts."
-          }
-          cta
-        />
       ) : (
         <div className="col g3">
           {shown.map((o) => (
@@ -146,21 +192,5 @@ export function OrdersClient({assets, stables}: {assets: AssetLite[]; stables: S
         </div>
       )}
     </>
-  );
-}
-
-function EmptyState({title, body, cta}: {title: string; body: string; cta?: boolean}) {
-  return (
-    <div className="module empty-state">
-      <div className="t-h3">{title}</div>
-      <p className="t-sm muted prose" style={{maxWidth: "46ch", margin: "0 auto 18px"}}>
-        {body}
-      </p>
-      {cta && (
-        <Link href="/markets" className="btn">
-          Browse markets
-        </Link>
-      )}
-    </div>
   );
 }

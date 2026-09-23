@@ -11,6 +11,7 @@ import {formatAmount} from "@/lib/format";
 import {useVault} from "@/lib/useVault";
 import {useOrderRecords} from "@/lib/useOrders";
 import {Skeleton} from "./ui/Skeleton";
+import {ZeroState} from "./ZeroState";
 import {TokenIdentity} from "./identity";
 
 interface Stable {
@@ -66,20 +67,34 @@ export function VaultClient({stables}: {stables: Stable[]}) {
         </div>
       </div>
 
-      {!isConnected ? (
-        <div className="module empty-state">
-          <div className="t-h3">Connect a wallet</div>
-          <p className="t-sm muted prose" style={{maxWidth: "44ch", margin: "0 auto"}}>
-            Your vault is created the first time you deposit or set an order.
-          </p>
-        </div>
-      ) : !clientDeployment() ? (
-        <div className="module empty-state">
-          <div className="t-h3">Not deployed on this network yet</div>
-          <p className="t-sm muted prose" style={{maxWidth: "46ch", margin: "0 auto"}}>
-            Vaults become available once the Bespeak contracts are live on X Layer.
-          </p>
-        </div>
+      {!isConnected || !clientDeployment() ? (
+        <ZeroState
+          title={isConnected ? "Not deployed on this network yet" : "No capital deposited yet"}
+          body={
+            isConnected
+              ? "Vaults become available once the Bespeak contracts are live on X Layer. Market data is live in the meantime."
+              : "Your vault is a contract only you can withdraw from — nothing is pooled. It is created the first time you deposit or set an order, and reserved capital is released the moment you cancel."
+          }
+          primary={{href: "/markets", label: "Explore markets"}}
+          contextTitle="Supported stablecoins on X Layer"
+          context={
+            <div className="col g5">
+              {stables.map((st) => (
+                <div key={st.symbol}>
+                  <div className="between" style={{marginBottom: 4}}>
+                    <TokenIdentity symbol={st.symbol} size="sm" />
+                    <span className="t-xs faint">{st.decimals} decimals</span>
+                  </div>
+                  <div className="mono t-xs faint truncate">{st.address}</div>
+                </div>
+              ))}
+              <p className="t-xs muted prose" style={{margin: 0}}>
+                Each asset has its own executable pair — Bespeak uses the one that actually
+                has liquidity rather than assuming a single stablecoin.
+              </p>
+            </div>
+          }
+        />
       ) : (
         <>
           <div

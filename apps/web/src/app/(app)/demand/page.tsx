@@ -2,6 +2,7 @@ import Link from "next/link";
 import {getDemand, REGISTRY, deployment} from "@/lib/server";
 import {formatAmount} from "@/lib/format";
 import {AssetIdentity, TokenIdentity} from "@/components/identity";
+import {ZeroState} from "@/components/ZeroState";
 
 import type {Metadata} from "next";
 
@@ -66,22 +67,30 @@ export default async function DemandPage() {
         </div>
       )}
 
-      {!deployed ? (
-        <div className="module empty-state">
-          <div className="t-h3">Not deployed on this network yet</div>
-          <p className="t-sm muted prose" style={{maxWidth: "46ch", margin: "0 auto"}}>
-            Committed demand appears once the Bespeak contracts are live on X Layer.
-          </p>
-        </div>
-      ) : rows.length === 0 ? (
-        <div className="module empty-state">
-          <div className="t-h3">No committed demand yet</div>
-          <p className="t-sm muted prose" style={{maxWidth: "48ch", margin: "0 auto 18px"}}>
-            When someone reserves funds for an asset that is not executable here, it appears
-            with the real amount committed — never a placeholder.
-          </p>
-          <Link href="/markets" className="btn">Browse markets</Link>
-        </div>
+      {!deployed || rows.length === 0 ? (
+        <ZeroState
+          title="No capital is currently committed"
+          body={
+            deployed
+              ? "When someone reserves funds for an asset that is not executable on X Layer yet, it appears here with the real amount committed — never a placeholder, and never a vote or a waitlist."
+              : "Committed demand appears once the Bespeak contracts are live on X Layer. Market data is live in the meantime."
+          }
+          primary={{href: "/markets", label: "Explore markets"}}
+          contextTitle="How committed demand works"
+          context={
+            <div className="col g4">
+              <div className="t-sm prose" style={{paddingLeft: 12, borderLeft: "2px solid var(--brand)"}}>
+                Reserve capital for an official xStock Bespeak cannot execute here yet.
+              </div>
+              <div className="t-sm prose" style={{paddingLeft: 12, borderLeft: "2px solid var(--line-2)"}}>
+                It executes automatically once a verified deployment and route exist.
+              </div>
+              <div className="t-sm prose" style={{paddingLeft: 12, borderLeft: "2px solid var(--line-2)"}}>
+                Or it releases automatically at your deadline. Nothing is spent meanwhile.
+              </div>
+            </div>
+          }
+        />
       ) : (
         <div className="module" style={{padding: "4px 24px", overflowX: "auto"}}>
           <table className="table">

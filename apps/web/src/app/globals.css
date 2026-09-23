@@ -1337,3 +1337,25 @@ button.searchfield { text-align: left; font: inherit; color: var(--ink-3); }
   background: var(--waiting);
   animation: breathe 1.6s var(--ease) infinite;
 }
+
+/* ---------------- zero states ------------------------------------------- */
+
+.zero {
+  display: grid;
+  gap: var(--s-6);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: var(--r-module);
+  background: var(--surface);
+  padding: var(--s-8);
+}
+.zero-head { max-width: 46ch; }
+.zero-context {
+  background: var(--surface-2);
+  border-radius: var(--r-control);
+  padding: var(--s-5);
+}
+@media (max-width: 900px) {
+  .zero { grid-template-columns: minmax(0, 1fr); padding: var(--s-6); }
+}

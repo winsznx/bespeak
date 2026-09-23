@@ -10,6 +10,7 @@ import {formatAmount, formatUtcShort} from "@/lib/format";
 import {useOrderRecords, type OrderRecord} from "@/lib/useOrders";
 import {AssetIdentity, TokenIdentity} from "./identity";
 import {Skeleton} from "./ui/Skeleton";
+import {ZeroState} from "./ZeroState";
 
 interface AssetLite {
   assetId: string;
@@ -41,17 +42,35 @@ export function ActivityClient({assets, stables}: {assets: AssetLite[]; stables:
         </div>
       </div>
 
-      {!isConnected ? (
-        <div className="module empty-state">
-          <div className="t-h3">Connect a wallet</div>
-          <p className="t-sm muted prose" style={{maxWidth: "42ch", margin: "0 auto"}}>
-            Deposits, reservations, fills and releases appear here.
-          </p>
-        </div>
-      ) : !clientDeployment() ? (
-        <div className="module empty-state">
-          <div className="t-h3">Not deployed on this network yet</div>
-        </div>
+      {!isConnected || !clientDeployment() ? (
+        <ZeroState
+          title={isConnected ? "Not deployed on this network yet" : "No activity yet"}
+          body={
+            isConnected
+              ? "Activity appears once the Bespeak contracts are live on X Layer."
+              : "Your Bespeak activity will appear here after your first order, grouped by day and expandable into the underlying on-chain detail."
+          }
+          primary={{href: "/markets", label: "Set an order"}}
+          contextTitle="What gets recorded"
+          context={
+            <div className="col g3">
+              {[
+                "Capital reserved when an order is created",
+                "Held, with the exact condition that blocked execution",
+                "Purchase completed, with an independently verified receipt",
+                "Funds released on cancel or expiry",
+              ].map((t) => (
+                <div
+                  key={t}
+                  className="t-sm prose"
+                  style={{paddingLeft: 12, borderLeft: "2px solid var(--line-2)"}}
+                >
+                  {t}
+                </div>
+              ))}
+            </div>
+          }
+        />
       ) : isLoading ? (
         <div className="module module-pad">
           {[0, 1, 2, 3, 4].map((i) => (
@@ -71,15 +90,11 @@ export function ActivityClient({assets, stables}: {assets: AssetLite[]; stables:
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="module empty-state">
-          <div className="t-h3">Nothing yet</div>
-          <p className="t-sm muted prose" style={{maxWidth: "42ch", margin: "0 auto 18px"}}>
-            Your first order will show up here the moment it is created.
-          </p>
-          <Link href="/markets" className="btn">
-            Browse markets
-          </Link>
-        </div>
+        <ZeroState
+          title="No activity yet"
+          body="Your first order will show up here the moment it is created, grouped by day."
+          primary={{href: "/markets", label: "Set an order"}}
+        />
       ) : (
         <div className="col g8">
           {groups.map(([day, rows]) => (
