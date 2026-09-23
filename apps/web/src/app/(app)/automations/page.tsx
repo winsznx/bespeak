@@ -1,6 +1,15 @@
 import {headers} from "next/headers";
 import {REGISTRY} from "@/lib/server";
 
+import type {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: "Automations",
+  description:
+    "Bespeak's read API for agents and integrators. Every state change stays a wallet-authorized transaction the caller builds themselves.",
+  alternates: {canonical: "/automations"},
+};
+
 export const dynamic = "force-dynamic";
 
 /// Automations is a connection surface, not an AI marketing page. It documents the

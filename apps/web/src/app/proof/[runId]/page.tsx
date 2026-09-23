@@ -15,26 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function ProofPage({params}: {params: Promise<{runId: string}>}) {
   const {runId} = await params;
   const receipt = await loadReceiptById(runId);
-  if (!receipt) {
-    const all = await listReceipts();
-    return (
-      <section className="section">
-        <h1>Proof</h1>
-        <p className="lede">No run with that id.</p>
-        {all.length > 0 && (
-          <ul>
-            {all.map((r) => (
-              <li key={r.receiptId}>
-                <Link href={`/proof/${r.receiptId}`} className="mono">
-                  {r.receiptId}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    );
-  }
+  if (!receipt) notFound();
 
   const asset = REGISTRY.assets.find(
     (a) => a.symbol.toLowerCase() === String(receipt.assetSymbol ?? "").toLowerCase(),

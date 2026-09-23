@@ -1,3 +1,4 @@
+import type {Metadata} from "next";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {observeSessions, type SessionObservation} from "@bespeak/conditions";
@@ -9,6 +10,31 @@ import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {nextRegularSessionOpen, formatUtcShort} from "@/lib/format";
 
 export const revalidate = 15;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{symbol: string}>;
+}): Promise<Metadata> {
+  const {symbol} = await params;
+  const asset = assetBySymbol(symbol);
+  if (!asset) return {title: "Asset not found", robots: {index: false, follow: false}};
+
+  const plain = asset.name.replace(" xStock", "");
+  return {
+    title: `${asset.underlyingSymbol} on Bespeak — ${plain} xStock`,
+    description:
+      `Set a condition-aware standing order for ${plain} (${asset.underlyingSymbol}) on X Layer. ` +
+      `Buy now, at the next regular session, when available, or on a schedule` +
+      (asset.route ? `, paying in ${asset.route.quoteSymbol}.` : "."),
+    alternates: {canonical: `/asset/${asset.symbol}`},
+    openGraph: {
+      title: `${asset.underlyingSymbol} on Bespeak`,
+      description: `Condition-aware standing orders for ${plain} on X Layer.`,
+      url: `/asset/${asset.symbol}`,
+    },
+  };
+}
 
 export default async function AssetPage({params}: {params: Promise<{symbol: string}>}) {
   const {symbol} = await params;

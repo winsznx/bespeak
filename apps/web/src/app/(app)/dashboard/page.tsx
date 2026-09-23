@@ -4,6 +4,13 @@ import {REGISTRY, deployment} from "@/lib/server";
 import {nextRegularSessionOpen, formatUtcShort} from "@/lib/format";
 import {DashboardClient} from "@/components/app/DashboardClient";
 
+import type {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: "Overview",
+  robots: {index: false, follow: false},
+};
+
 export const revalidate = 20;
 
 /// Overview. Server-renders the market facts that do not depend on a wallet, and hands the

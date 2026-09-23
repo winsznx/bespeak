@@ -27,11 +27,47 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bespeak.app";
+
 export const metadata: Metadata = {
-  title: "Bespeak — set the market moment",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Bespeak — Set the market moment",
+    template: "%s · Bespeak",
+  },
   description:
-    "Choose the condition. Bespeak waits, executes on X Layer and delivers the xStock " +
-    "when your instruction becomes eligible.",
+    "Condition-aware standing orders for tokenized equities on X Layer.",
+  applicationName: "Bespeak",
+  alternates: {canonical: "/"},
+  openGraph: {
+    type: "website",
+    siteName: "Bespeak",
+    url: SITE_URL,
+    title: "Bespeak — Set the market moment",
+    description:
+      "Condition-aware standing orders for tokenized equities on X Layer.",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Bespeak — set the market moment. A standing order for NVDA waiting on the next regular session.",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Bespeak — Set the market moment",
+    description:
+      "Condition-aware standing orders for tokenized equities on X Layer.",
+    images: ["/og.png"],
+  },
+  manifest: "/manifest.webmanifest",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {index: true, follow: true},
+  },
 };
 
 export const viewport: Viewport = {

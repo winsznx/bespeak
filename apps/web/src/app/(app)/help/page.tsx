@@ -1,5 +1,13 @@
 import Link from "next/link";
 
+import type {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: "Help",
+  description: "What Bespeak does, what it refuses to do, and how a verified receipt works.",
+  alternates: {canonical: "/help"},
+};
+
 const FAQ = [
   {
     q: "What exactly am I authorizing?",

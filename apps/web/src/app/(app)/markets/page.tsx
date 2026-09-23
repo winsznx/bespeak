@@ -5,6 +5,15 @@ import {Suspense} from "react";
 import {MarketsClient} from "@/components/app/MarketsClient";
 import {MarketsSkeleton} from "@/components/app/MarketsSkeleton";
 
+import type {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: "Markets",
+  description:
+    "Official xStocks Bespeak can execute on X Layer, each verified on chain, with the executable payment pair and route liquidity for every asset.",
+  alternates: {canonical: "/markets"},
+};
+
 export const revalidate = 20;
 
 export default async function MarketsPage() {

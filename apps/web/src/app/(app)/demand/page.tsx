@@ -3,6 +3,15 @@ import {getDemand, REGISTRY, deployment} from "@/lib/server";
 import {formatAmount} from "@/lib/format";
 import {AssetIdentity, TokenIdentity} from "@/components/identity";
 
+import type {Metadata} from "next";
+
+export const metadata: Metadata = {
+  title: "Demand",
+  description:
+    "Capital already reserved for official xStocks that are not yet executable on X Layer. Committed reservations only — never votes or waitlists.",
+  alternates: {canonical: "/demand"},
+};
+
 export const revalidate = 30;
 
 /// Committed demand for assets not executable on X Layer yet.
