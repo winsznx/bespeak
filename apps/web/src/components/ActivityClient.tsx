@@ -8,7 +8,7 @@ import {OrderStatus, TriggerType} from "@bespeak/shared";
 import {clientDeployment} from "@/lib/addresses";
 import {formatAmount, formatUtcShort} from "@/lib/format";
 import {useOrderRecords, type OrderRecord} from "@/lib/useOrders";
-import {AssetGlyph} from "./ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "./identity";
 import {Skeleton} from "./ui/Skeleton";
 
 interface AssetLite {
@@ -104,19 +104,17 @@ export function ActivityClient({assets, stables}: {assets: AssetLite[]; stables:
                         borderBottom: i === rows.length - 1 ? "none" : "1px solid var(--line)",
                       }}
                     >
-                      <AssetGlyph symbol={a?.symbol ?? "??"} size={32} />
                       <div className="grow" style={{minWidth: 0}}>
-                        <div className="t-sm truncate" style={{fontWeight: 500}}>
-                          {a?.underlyingSymbol ?? "Asset"} · {eventLabel(o.status)}
-                        </div>
-                        <div className="t-xs faint truncate">
-                          {conditionLabel(o.triggerType)} ·{" "}
-                          {formatUtcShort(new Date(Number(o.createdAt) * 1000))}
-                        </div>
+                        <AssetIdentity
+                          symbol={a?.symbol ?? ""}
+                          underlyingSymbol={`${a?.underlyingSymbol ?? "Asset"} · ${eventLabel(o.status)}`}
+                          variant="row"
+                          sub={`${conditionLabel(o.triggerType)} · ${formatUtcShort(new Date(Number(o.createdAt) * 1000))}`}
+                        />
                       </div>
-                      <span className="t-sm muted" style={{whiteSpace: "nowrap"}}>
-                        ${st ? formatAmount(o.amountIn, st.decimals) : "—"}{" "}
-                        <span className="faint">{st?.symbol}</span>
+                      <span className="row g2 t-sm muted" style={{whiteSpace: "nowrap"}}>
+                        ${st ? formatAmount(o.amountIn, st.decimals) : "—"}
+                        {st && <TokenIdentity symbol={st.symbol} size="xs" showLabel={false} />}
                       </span>
                       <StateChip status={o.status} />
                     </div>

@@ -15,14 +15,17 @@
     "@bespeak/okx": "workspace:*",
     "@bespeak/sdk": "workspace:*",
     "@bespeak/shared": "workspace:*",
+    "@rainbow-me/rainbowkit": "^2.2.11",
     "@tanstack/react-query": "^5.62.0",
     "@wagmi/core": "^2.22.1",
+    "@x402/evm": "^2.27.0",
+    "@x402/svm": "^2.27.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1",
     "viem": "^2.21.0",
-    "wagmi": "^2.14.0"
+    "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

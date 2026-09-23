@@ -2,7 +2,7 @@ import Link from "next/link";
 import {explorerTx} from "@bespeak/shared";
 import {formatAmount, formatUtc} from "@/lib/format";
 import type {StoredReceipt} from "@/lib/receipts";
-import {AssetGlyph} from "./ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "./identity";
 
 export interface ReceiptViewProps {
   receipt: StoredReceipt | null;
@@ -32,13 +32,15 @@ export function ReceiptView(p: ReceiptViewProps) {
         <div className="row g4" style={{marginBottom: 28}}>
           <Seal verified={verified} />
           <div style={{minWidth: 0}}>
-            <h1 className="t-h1" style={{fontSize: "clamp(26px,3.2vw,38px)", marginBottom: 4}}>
+            <h1 className="t-h1" style={{fontSize: "clamp(26px,3.2vw,38px)", marginBottom: 6}}>
               {verified ? "Purchase complete" : "Execution recorded"}
             </h1>
-            <div className="row g2 t-sm muted">
-              <AssetGlyph symbol={p.symbol} size={20} />
-              {p.underlyingSymbol} · {p.assetName}
-            </div>
+            <AssetIdentity
+              symbol={p.symbol}
+              underlyingSymbol={p.underlyingSymbol}
+              variant="compact"
+              sub={p.assetName}
+            />
           </div>
         </div>
 
@@ -58,8 +60,8 @@ export function ReceiptView(p: ReceiptViewProps) {
               <div className="t-figure">
                 ${formatAmount(BigInt(receipt.actualInputSpent), p.inputDecimals)}
               </div>
-              <div className="t-xs faint" style={{marginTop: 5}}>
-                {p.inputSymbol}
+              <div style={{marginTop: 8}}>
+                <TokenIdentity symbol={p.inputSymbol} size="xs" muted />
               </div>
             </div>
             <div style={{padding: "26px 0 26px 26px", borderLeft: "1px solid var(--line)"}}>

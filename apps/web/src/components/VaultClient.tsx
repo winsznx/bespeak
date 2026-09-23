@@ -11,7 +11,7 @@ import {formatAmount} from "@/lib/format";
 import {useVault} from "@/lib/useVault";
 import {useOrderRecords} from "@/lib/useOrders";
 import {Skeleton} from "./ui/Skeleton";
-import {AssetGlyph} from "./ui/AssetGlyph";
+import {TokenIdentity} from "./identity";
 
 interface Stable {
   address: Address;
@@ -60,7 +60,7 @@ export function VaultClient({stables}: {stables: Stable[]}) {
                   : undefined
               }
             >
-              {s.symbol}
+              <TokenIdentity symbol={s.symbol} size="xs" />
             </button>
           ))}
         </div>
@@ -148,7 +148,6 @@ export function VaultClient({stables}: {stables: Stable[]}) {
               <div className="col g4">
                 {reservations.map((o) => (
                   <div className="row g3" key={o.id}>
-                    <AssetGlyph symbol="??" size={30} />
                     <div className="grow" style={{minWidth: 0}}>
                       <div className="t-sm truncate" style={{fontWeight: 500}}>
                         Order {o.id.slice(0, 10)}

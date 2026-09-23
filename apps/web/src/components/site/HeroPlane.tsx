@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {AssetGlyph} from "@/components/ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {Countdown} from "@/components/Countdown";
 
 /// The hero's main product plane: an oversized, real Bespeak order composition rather than
@@ -25,13 +25,12 @@ export function HeroPlane({
   return (
     <div className="hero-plane">
       <div className="between" style={{marginBottom: 22}}>
-        <div className="row g3">
-          <AssetGlyph symbol={symbol} size={40} />
-          <div>
-            <div className="t-h3">{name}</div>
-            <div className="t-xs faint">{symbol} · Official xStock</div>
-          </div>
-        </div>
+        <AssetIdentity
+          symbol={`${symbol}x`}
+          underlyingSymbol={name}
+          variant="header"
+          sub={`${symbol} · Official xStock`}
+        />
         <span className={open ? "chip chip-success" : "chip chip-waiting"}>
           <span className="dot" />
           {open ? "Regular session" : "After hours"}
@@ -104,8 +103,8 @@ export function HeroPlane({
 
       <div className="between" style={{marginBottom: 18}}>
         <span className="t-sm muted">Amount</span>
-        <span className="t-figure-sm">
-          $500 <span className="t-sm muted">{payWith}</span>
+        <span className="row g2 t-figure-sm">
+          $500 <TokenIdentity symbol={payWith} size="sm" muted />
         </span>
       </div>
 

@@ -8,3 +8,8 @@ allowBuilds:
   keccak: true
   bufferutil: true
   utf-8-validate: true
+
+minimumReleaseAgeExclude:
+  - '@x402/core@2.27.0'
+  - '@x402/evm@2.27.0'
+  - '@x402/svm@2.27.0'

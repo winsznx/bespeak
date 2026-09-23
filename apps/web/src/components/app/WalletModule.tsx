@@ -1,83 +1,110 @@
 "use client";
 
-import {useAccount, useConnect} from "wagmi";
 import Link from "next/link";
-import {X_LAYER_CHAIN_ID} from "@bespeak/shared";
+import {ConnectButton as RKConnectButton} from "@rainbow-me/rainbowkit";
 import {shortAddress} from "@/lib/format";
+import {NetworkIdentity, TokenIdentity} from "@/components/identity";
 
-/// The shell's single high-contrast module. Shows the real connection state rather than a
-/// decorative promo: disconnected, wrong network, or connected with a route to add funds.
+/// The shell's single high-contrast module. Shows the real connection state — not
+/// connected, wrong network, or connected — and every action opens the real wallet modal.
 export function WalletModule() {
-  const {address, isConnected, chainId} = useAccount();
-  const {connect, connectors, isPending} = useConnect();
-  const injected = connectors[0];
-
-  if (!isConnected) {
-    return (
-      <div className="wallet-card">
-        <div className="t-label" style={{color: "var(--invert-ink-2)"}}>
-          Wallet
-        </div>
-        <p className="t-sm prose" style={{margin: "10px 0 14px", color: "var(--invert-ink-2)"}}>
-          Connect to fund a vault and set standing orders.
-        </p>
-        <button
-          className="btn btn-block"
-          style={{
-            background: "var(--invert-ink)",
-            borderColor: "var(--invert-ink)",
-            color: "var(--invert)",
-            height: 38,
-          }}
-          disabled={!injected || isPending}
-          onClick={() => injected && connect({connector: injected})}
-        >
-          {isPending ? "Connecting" : injected ? "Connect wallet" : "No wallet found"}
-        </button>
-      </div>
-    );
-  }
-
-  const wrongNetwork = chainId !== X_LAYER_CHAIN_ID;
-
   return (
-    <div className="wallet-card">
-      <div className="between" style={{marginBottom: 12}}>
-        <span className="t-label" style={{color: "var(--invert-ink-2)"}}>
-          Wallet
-        </span>
-        <span
-          className="row g1"
-          style={{fontSize: 11.5, color: wrongNetwork ? "var(--waiting)" : "var(--invert-ink-2)"}}
-        >
-          <span
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: 999,
-              background: wrongNetwork ? "var(--waiting)" : "var(--success)",
-            }}
-          />
-          {wrongNetwork ? "Wrong network" : "X Layer"}
-        </span>
-      </div>
+    <RKConnectButton.Custom>
+      {({account, chain, openAccountModal, openChainModal, openConnectModal, mounted}) => {
+        const ready = mounted;
+        const connected = ready && account && chain;
 
-      <div className="mono" style={{fontSize: 12.5, marginBottom: 14}}>
-        {address ? shortAddress(address) : ""}
-      </div>
+        return (
+          <div
+            className="wallet-card"
+            {...(!ready && {"aria-hidden": true, style: {opacity: 0}})}
+          >
+            <div className="between" style={{marginBottom: 12}}>
+              <span className="t-label" style={{color: "var(--invert-ink-2)"}}>
+                Wallet
+              </span>
+              {connected && (
+                <button
+                  type="button"
+                  onClick={openChainModal}
+                  className="row g2"
+                  style={{
+                    border: 0,
+                    background: "transparent",
+                    cursor: "pointer",
+                    fontSize: 11.5,
+                    color: chain.unsupported ? "var(--waiting)" : "var(--invert-ink-2)",
+                  }}
+                >
+                  <NetworkIdentity
+                    size={13}
+                    showLabel={false}
+                    status={chain.unsupported ? "warn" : "ok"}
+                  />
+                  {chain.unsupported ? "Wrong network" : (chain.name ?? "X Layer")}
+                </button>
+              )}
+            </div>
 
-      <Link
-        href="/vault"
-        className="btn btn-block"
-        style={{
-          background: "var(--invert-ink)",
-          borderColor: "var(--invert-ink)",
-          color: "var(--invert)",
-          height: 38,
-        }}
-      >
-        Deposit
-      </Link>
-    </div>
+            {!connected ? (
+              <>
+                <p
+                  className="t-sm prose"
+                  style={{margin: "0 0 14px", color: "var(--invert-ink-2)"}}
+                >
+                  Connect to fund a vault and set standing orders.
+                </p>
+                <button type="button" onClick={openConnectModal} className="wallet-card-btn">
+                  Connect wallet
+                </button>
+              </>
+            ) : chain.unsupported ? (
+              <>
+                <p
+                  className="t-sm prose"
+                  style={{margin: "0 0 14px", color: "var(--invert-ink-2)"}}
+                >
+                  Bespeak runs on X Layer. Switch network to continue.
+                </p>
+                <button type="button" onClick={openChainModal} className="wallet-card-btn">
+                  Switch to X Layer
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={openAccountModal}
+                  className="mono"
+                  style={{
+                    border: 0,
+                    background: "transparent",
+                    padding: 0,
+                    marginBottom: 6,
+                    color: "var(--invert-ink)",
+                    fontSize: 12.5,
+                    cursor: "pointer",
+                  }}
+                >
+                  {account.ensName ?? shortAddress(account.address)}
+                </button>
+                {account.displayBalance && (
+                  <div
+                    className="row g2"
+                    style={{marginBottom: 14, color: "var(--invert-ink-2)", fontSize: 12.5}}
+                  >
+                    <TokenIdentity symbol="OKB" size="xs" showLabel={false} />
+                    {account.displayBalance}
+                  </div>
+                )}
+                <Link href="/vault" className="wallet-card-btn">
+                  Deposit
+                </Link>
+              </>
+            )}
+          </div>
+        );
+      }}
+    </RKConnectButton.Custom>
   );
 }

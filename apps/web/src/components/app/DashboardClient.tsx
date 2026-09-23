@@ -8,7 +8,7 @@ import {OrderStatus, TriggerType} from "@bespeak/shared";
 import {useOrderRecords} from "@/lib/useOrders";
 import {useVault} from "@/lib/useVault";
 import {formatAmount} from "@/lib/format";
-import {AssetGlyph} from "@/components/ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {Skeleton} from "@/components/ui/Skeleton";
 import {Icon} from "@/components/ui/Icon";
 import {Countdown} from "@/components/Countdown";
@@ -224,16 +224,15 @@ export function DashboardClient({
               <div className="col g4">
                 {assets.slice(0, 3).map((a) => (
                   <Link href={`/asset/${a.symbol}`} className="row g3" key={a.assetId}>
-                    <AssetGlyph symbol={a.symbol} size={30} />
                     <div className="grow" style={{minWidth: 0}}>
-                      <div className="t-sm truncate" style={{fontWeight: 500}}>
-                        {a.underlyingSymbol}
-                      </div>
-                      <div className="t-xs faint truncate">
-                        {openNow.includes(a.underlyingSymbol) ? "In session" : "Opens next session"}
-                      </div>
+                      <AssetIdentity
+                        symbol={a.symbol}
+                        underlyingSymbol={a.underlyingSymbol}
+                        variant="row"
+                        sub={openNow.includes(a.underlyingSymbol) ? "In session" : "Opens next session"}
+                      />
                     </div>
-                    {a.payWith && <span className="chip chip-outline">{a.payWith}</span>}
+                    {a.payWith && <TokenIdentity symbol={a.payWith} size="xs" showLabel={false} />}
                   </Link>
                 ))}
               </div>
@@ -249,14 +248,13 @@ export function DashboardClient({
                 );
                 return (
                   <div className="row g3" key={o.id}>
-                    <AssetGlyph symbol={a?.symbol ?? "??"} size={30} />
                     <div className="grow" style={{minWidth: 0}}>
-                      <div className="t-sm truncate" style={{fontWeight: 500}}>
-                        {a?.underlyingSymbol ?? "Asset"}
-                      </div>
-                      <div className="t-xs faint truncate">
-                        {conditionLabel(o.triggerType)}
-                      </div>
+                      <AssetIdentity
+                        symbol={a?.symbol ?? ""}
+                        underlyingSymbol={a?.underlyingSymbol ?? "Asset"}
+                        variant="row"
+                        sub={conditionLabel(o.triggerType)}
+                      />
                     </div>
                     <div style={{textAlign: "right"}}>
                       <div className="t-sm" style={{fontWeight: 500}}>
@@ -307,16 +305,19 @@ export function DashboardClient({
               <div className="col g5">
                 {assets.slice(0, 4).map((a) => (
                   <div className="row g3" key={a.assetId}>
-                    <AssetGlyph symbol={a.symbol} size={34} />
                     <div className="grow" style={{minWidth: 0}}>
-                      <div className="t-sm truncate" style={{fontWeight: 500}}>
-                        {a.underlyingSymbol}
-                      </div>
-                      <div className="t-xs faint truncate">{a.name}</div>
+                      <AssetIdentity
+                        symbol={a.symbol}
+                        underlyingSymbol={a.underlyingSymbol}
+                        name={a.name}
+                        variant="row"
+                      />
                     </div>
-                    <span className="t-sm muted" style={{whiteSpace: "nowrap"}}>
-                      {a.payWith ?? "—"}
-                    </span>
+                    {a.payWith ? (
+                      <TokenIdentity symbol={a.payWith} size="xs" muted />
+                    ) : (
+                      <span className="faint">—</span>
+                    )}
                     <span
                       className={
                         openNow.includes(a.underlyingSymbol)
@@ -341,16 +342,17 @@ export function DashboardClient({
                 );
                 return (
                   <div className="row g3" key={o.id}>
-                    <AssetGlyph symbol={a?.symbol ?? "??"} size={34} />
                     <div className="grow" style={{minWidth: 0}}>
-                      <div className="t-sm truncate" style={{fontWeight: 500}}>
-                        {a?.underlyingSymbol ?? "Asset"}
-                      </div>
-                      <div className="t-xs faint truncate">{eventLabel(o.status)}</div>
+                      <AssetIdentity
+                        symbol={a?.symbol ?? ""}
+                        underlyingSymbol={a?.underlyingSymbol ?? "Asset"}
+                        variant="row"
+                        sub={eventLabel(o.status)}
+                      />
                     </div>
-                    <div className="t-sm muted" style={{whiteSpace: "nowrap"}}>
-                      ${st ? formatAmount(o.amountIn, st.decimals) : "—"}{" "}
-                      <span className="faint">{st?.symbol}</span>
+                    <div className="row g2 t-sm muted" style={{whiteSpace: "nowrap"}}>
+                      ${st ? formatAmount(o.amountIn, st.decimals) : "—"}
+                      {st && <TokenIdentity symbol={st.symbol} size="xs" showLabel={false} />}
                     </div>
                     <StatusChip status={o.status} />
                   </div>

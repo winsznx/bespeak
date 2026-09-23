@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {useMemo, useState} from "react";
 import {useSearchParams} from "next/navigation";
-import {AssetGlyph} from "@/components/ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {Icon} from "@/components/ui/Icon";
 
 export interface MarketRow {
@@ -146,16 +146,13 @@ export function MarketsClient({
             {shown.map((r) => (
               <tr key={r.assetId}>
                 <td>
-                  <Link href={`/asset/${r.symbol}`} className="row g3">
-                    <AssetGlyph symbol={r.symbol} size={32} />
-                    <span style={{minWidth: 0}}>
-                      <span className="t-h4" style={{display: "block"}}>
-                        {r.underlyingSymbol}
-                      </span>
-                      <span className="t-xs faint truncate" style={{display: "block"}}>
-                        {r.name}
-                      </span>
-                    </span>
+                  <Link href={`/asset/${r.symbol}`}>
+                    <AssetIdentity
+                      symbol={r.symbol}
+                      underlyingSymbol={r.underlyingSymbol}
+                      name={r.name}
+                      variant="row"
+                    />
                   </Link>
                 </td>
                 <td>
@@ -172,7 +169,7 @@ export function MarketsClient({
                 </td>
                 <td>
                   {r.payWith ? (
-                    <span className="chip chip-outline">{r.payWith}</span>
+                    <TokenIdentity symbol={r.payWith} size="xs" />
                   ) : (
                     <span className="faint">—</span>
                   )}
@@ -198,10 +195,13 @@ export function MarketsClient({
         {shown.map((r) => (
           <Link href={`/asset/${r.symbol}`} className="module module-pad" key={r.assetId}>
             <div className="row g3" style={{marginBottom: 14}}>
-              <AssetGlyph symbol={r.symbol} size={36} />
               <div className="grow" style={{minWidth: 0}}>
-                <div className="t-h4">{r.underlyingSymbol}</div>
-                <div className="t-xs faint truncate">{r.name}</div>
+                <AssetIdentity
+                  symbol={r.symbol}
+                  underlyingSymbol={r.underlyingSymbol}
+                  name={r.name}
+                  variant="row"
+                />
               </div>
               {r.halted ? (
                 <span className="chip chip-danger">Halted</span>
@@ -212,8 +212,9 @@ export function MarketsClient({
               )}
             </div>
             <div className="row wrap g4 t-xs muted">
-              <span>
-                Pay with <strong style={{color: "var(--ink)"}}>{r.payWith ?? "—"}</strong>
+              <span className="row g2">
+                Pay with{" "}
+                {r.payWith ? <TokenIdentity symbol={r.payWith} size="xs" /> : <span>—</span>}
               </span>
               <span>
                 Liquidity{" "}

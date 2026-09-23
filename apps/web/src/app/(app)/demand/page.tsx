@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {getDemand, REGISTRY, deployment} from "@/lib/server";
 import {formatAmount} from "@/lib/format";
-import {AssetGlyph} from "@/components/ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "@/components/identity";
 
 export const revalidate = 30;
 
@@ -45,7 +45,9 @@ export default async function DemandPage() {
             <div className="t-figure">
               {formatAmount(totalCommitted, stable.decimals)}
             </div>
-            <div className="t-xs faint" style={{marginTop: 5}}>{stable.symbol}</div>
+            <div style={{marginTop: 8}}>
+              <TokenIdentity symbol={stable.symbol} size="xs" muted />
+            </div>
           </div>
           <div style={{padding: "24px 0 24px 24px", borderLeft: "1px solid var(--line)"}}>
             <div className="t-label" style={{marginBottom: 9}}>Active commitments</div>
@@ -90,13 +92,18 @@ export default async function DemandPage() {
                 return (
                   <tr key={r.assetId}>
                     <td>
-                      <span className="row g3">
-                        <AssetGlyph symbol={a?.symbol ?? "??"} size={32} />
-                        <span className="t-h4">{a?.underlyingSymbol ?? "Unknown"}</span>
-                      </span>
+                      <AssetIdentity
+                        symbol={a?.symbol ?? ""}
+                        underlyingSymbol={a?.underlyingSymbol ?? "Unknown"}
+                        variant="row"
+                        showName={false}
+                      />
                     </td>
                     <td className="num">
-                      {formatAmount(r.committed, stable.decimals)} {stable.symbol}
+                      <span className="row g2" style={{justifyContent: "flex-end"}}>
+                        {formatAmount(r.committed, stable.decimals)}
+                        <TokenIdentity symbol={stable.symbol} size="xs" showLabel={false} />
+                      </span>
                     </td>
                     <td className="num">{r.orders}</td>
                     <td className="t-sm muted">

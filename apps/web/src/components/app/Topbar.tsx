@@ -1,37 +1,29 @@
 "use client";
 
 import {useEffect, useRef, useState} from "react";
-import {useRouter} from "next/navigation";
 import Link from "next/link";
-import {useAccount} from "wagmi";
-import {X_LAYER_CHAIN_ID} from "@bespeak/shared";
-import {Icon} from "@/components/ui/Icon";
 import {Wordmark} from "@/components/Wordmark";
-import {shortAddress} from "@/lib/format";
+import {ConnectButton, NetworkButton} from "@/components/ConnectButton";
 import {ThemeToggle} from "./ThemeToggle";
-import {ConnectButton} from "@/components/ConnectButton";
+import {CommandSearch} from "./CommandSearch";
 
-/// Top utility region. Function translated from the reference rather than its icon set:
-/// a real search over markets and orders, the network Bespeak actually requires, theme,
-/// and wallet identity. Nothing decorative.
-export function Topbar({search}: {search?: string}) {
-  const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [q, setQ] = useState(search ?? "");
-  const {address, isConnected, chainId} = useAccount();
+/// Top utility region. Function translated from the reference rather than its icon set: a
+/// real search over markets and orders, the network Bespeak actually requires, theme, and
+/// wallet identity. Nothing decorative.
+export function Topbar() {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        inputRef.current?.focus();
+        setOpen(true);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-
-  const wrongNetwork = isConnected && chainId !== X_LAYER_CHAIN_ID;
 
   return (
     <header className="topbar">
@@ -39,48 +31,46 @@ export function Topbar({search}: {search?: string}) {
         <Wordmark size={18} />
       </Link>
 
-      <form
+      <button
+        ref={triggerRef}
+        type="button"
         className="searchfield"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (q.trim()) router.push(`/markets?q=${encodeURIComponent(q.trim())}`);
-        }}
-        role="search"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
       >
-        <Icon name="search" size={17} />
-        <input
-          ref={inputRef}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search markets or orders"
-          aria-label="Search markets or orders"
-        />
+        <SearchGlyph />
+        <span className="grow" style={{textAlign: "left"}}>
+          Search markets or orders
+        </span>
         <kbd className="kbd">⌘K</kbd>
-      </form>
+      </button>
 
       <div className="row g2" style={{marginLeft: "auto"}}>
-        <span
-          className={wrongNetwork ? "chip chip-waiting network-chip" : "chip chip-outline network-chip"}
-          title={wrongNetwork ? "Connected to the wrong network" : "X Layer mainnet, chain 196"}
-        >
-          <span
-            className="dot"
-            style={{background: wrongNetwork ? "var(--waiting)" : "var(--success)"}}
-          />
-          {wrongNetwork ? "Wrong network" : "X Layer"}
-        </span>
-
+        <NetworkButton />
         <ThemeToggle />
-
-        {isConnected && address ? (
-          <Link href="/vault" className="wallet-pill" title={address}>
-            <span className="wallet-avatar" aria-hidden="true" />
-            <span className="mono">{shortAddress(address)}</span>
-          </Link>
-        ) : (
-          <ConnectButton />
-        )}
+        <ConnectButton compact />
       </div>
+
+      <CommandSearch open={open} onClose={() => setOpen(false)} />
     </header>
+  );
+}
+
+function SearchGlyph() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 18 18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+      style={{flex: "none"}}
+    >
+      <circle cx="8.2" cy="8.2" r="4.7" />
+      <path d="M11.8 11.8l3 3" />
+    </svg>
   );
 }

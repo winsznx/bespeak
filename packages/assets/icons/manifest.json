@@ -1,0 +1,135 @@
+{
+  "generatedAt": "2026-09-23T07:04:53.998Z",
+  "icons": {
+    "NVDAx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/NVDAx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:38.855Z",
+      "checksum": "6b639eff0158850c474d378ed8580375c396dda494cfff9040e6b1735b8ef623",
+      "bytes": 23218,
+      "localPath": "/assets/equities/nvdax.png"
+    },
+    "TSLAx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/TSLAx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:39.640Z",
+      "checksum": "42cb949ac9a7e6385df10a59bcd47576260c6a78bf54df0eea962343644d7fd8",
+      "bytes": 16972,
+      "localPath": "/assets/equities/tslax.png"
+    },
+    "AAPLx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/AAPLx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:39.875Z",
+      "checksum": "930db19951493787ee286650222311b5158317bdb811205b450cfb412ab89295",
+      "bytes": 14540,
+      "localPath": "/assets/equities/aaplx.png"
+    },
+    "MSFTx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/MSFTx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:40.132Z",
+      "checksum": "254e57a4c746213c9773c00933ab360ff81ba023c3cc7ed9f2a3fd5224e4e3c2",
+      "bytes": 5646,
+      "localPath": "/assets/equities/msftx.png"
+    },
+    "SPYx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/SPYx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:40.422Z",
+      "checksum": "83c5db1a3c9d82482b9422bf1f850f1efe8af0ca9ed9455cb71f7830ad16b5c4",
+      "bytes": 13515,
+      "localPath": "/assets/equities/spyx.png"
+    },
+    "QQQx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/QQQx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:40.741Z",
+      "checksum": "ef8778ce76e2300a44cc6bd6a263336d9dac6acbfff4f09da1e8a419e7c87ee6",
+      "bytes": 18619,
+      "localPath": "/assets/equities/qqqx.png"
+    },
+    "AMZNx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/AMZNx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:41.011Z",
+      "checksum": "dbf6bfee7c8cd38e53a9191a5a3df6bbd69690c84a39330228b8cbe203f0d478",
+      "bytes": 22616,
+      "localPath": "/assets/equities/amznx.png"
+    },
+    "GOOGLx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/GOOGLx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:41.317Z",
+      "checksum": "b9240e1eb8a5174f437d82eb7852e54f318ae05f55409be38df3b851f9a8e876",
+      "bytes": 26598,
+      "localPath": "/assets/equities/googlx.png"
+    },
+    "METAx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/METAx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:41.626Z",
+      "checksum": "52cb2a0719cdc068ccccc28ba2f6451d4db43e48734a2e7832da7e66b0d7e806",
+      "bytes": 27546,
+      "localPath": "/assets/equities/metax.png"
+    },
+    "AMDx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/AMDx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:41.879Z",
+      "checksum": "d4b3a6dc338de3d4e6574d106ee937595557a4aa5a7dfb94a323163be2e9bbbf",
+      "bytes": 8408,
+      "localPath": "/assets/equities/amdx.png"
+    },
+    "COINx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/COINx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:42.246Z",
+      "checksum": "7b028dd209022659803a269eb4a35f61995249e9e2c17635ffe2db41eefce6d6",
+      "bytes": 18120,
+      "localPath": "/assets/equities/coinx.png"
+    },
+    "MSTRx": {
+      "sourceUrl": "https://xstocks-metadata.backed.fi/logos/tokens/MSTRx.png",
+      "sourceKind": "ISSUER",
+      "retrievedAt": "2026-09-23T07:04:42.478Z",
+      "checksum": "1456e378930a91691694252aef4c77d0b56eb296802a9b1396a4a92629a449a8",
+      "bytes": 17461,
+      "localPath": "/assets/equities/mstrx.png"
+    },
+    "usdc": {
+      "sourceUrl": "https://coin-images.coingecko.com/coins/images/6319/large/USDC.png?1769615602",
+      "sourceKind": "CONTRACT",
+      "note": "resolved by contract 0xb6ceceab302e2e4948951ee7843fc24e92933061",
+      "retrievedAt": "2026-09-23T07:04:44.350Z",
+      "checksum": "816df62109661d5ab41cd89093223a1cabb88a5e20bf2a382a80f7873be90266",
+      "bytes": 26045,
+      "localPath": "/assets/tokens/usdc.png"
+    },
+    "usdg": {
+      "sourceUrl": "https://coin-images.coingecko.com/coins/images/51281/large/GDN_USDG_Token_200x200.png?1730484111",
+      "sourceKind": "CONTRACT",
+      "note": "resolved by contract 0x4ae46a509f6b1d9056937ba4500cb143933d2dc8",
+      "retrievedAt": "2026-09-23T07:04:45.165Z",
+      "checksum": "f398f6aad2fe260847cda3d99336fd2a514766f14634f8f1a3c255d218d4a4c3",
+      "bytes": 21396,
+      "localPath": "/assets/tokens/usdg.png"
+    },
+    "okb": {
+      "sourceUrl": "https://coin-images.coingecko.com/coins/images/4463/large/WeChat_Image_20220118095654.png?1696505053",
+      "sourceKind": "CONTRACT",
+      "retrievedAt": "2026-09-23T07:04:46.476Z",
+      "checksum": "abba7b628877f42e5a6f26a7f0757f6ffbcc940dd25cf1b7bad3ed070ddabafc",
+      "bytes": 1703,
+      "localPath": "/assets/networks/okb.png"
+    },
+    "x-layer": {
+      "sourceUrl": "https://gateway.pinata.cloud/ipfs/QmSLkiAAr6VtJ6jEqEzz3QdZtVEHzR6Az7E4XD8qXwjuio",
+      "sourceKind": "CHAIN_LIST",
+      "retrievedAt": "2026-09-23T07:04:53.998Z",
+      "checksum": "6fbaf8061d202b6136ecfc81c8a1020489660bf40e36388f4ac35112cfe6782f",
+      "bytes": 276697,
+      "localPath": "/assets/networks/x-layer.png"
+    }
+  }
+}

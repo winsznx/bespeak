@@ -62,3 +62,23 @@ export const THEME_BOOTSTRAP = `
   document.documentElement.setAttribute("data-theme",v);
 }catch(e){document.documentElement.setAttribute("data-theme","light")}})();
 `;
+
+/// The theme actually in effect, resolving `system` against the OS and keeping it live if
+/// the OS preference changes while the page is open. RainbowKit needs a concrete
+/// light/dark value, not the three-way choice.
+export function useResolvedTheme(): "light" | "dark" {
+  const {choice} = useTheme();
+  const [systemDark, setSystemDark] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setSystemDark(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  if (choice === "system") return systemDark ? "dark" : "light";
+  return choice;
+}

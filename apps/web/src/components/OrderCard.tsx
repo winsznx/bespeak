@@ -10,7 +10,7 @@ import {clientDeployment} from "@/lib/addresses";
 import {formatAmount, formatUtcShort} from "@/lib/format";
 import type {OrderRecord} from "@/lib/useOrders";
 import type {MarketState} from "@/lib/useMarketState";
-import {AssetGlyph} from "@/components/ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {Countdown} from "./Countdown";
 
 interface AssetLite {
@@ -101,8 +101,9 @@ export function OrderCard({
           <div className="t-figure" style={{color: "var(--success)"}}>
             ${amount}
           </div>
-          <div className="t-xs faint" style={{marginTop: 4}}>
-            spent from your vault · {stable?.symbol}
+          <div className="row g2 t-xs faint" style={{marginTop: 6}}>
+            spent from your vault
+            {stable && <TokenIdentity symbol={stable.symbol} size="xs" muted />}
           </div>
         </div>
         <div
@@ -125,19 +126,16 @@ export function OrderCard({
         style={{background: "var(--surface-2)", borderColor: "transparent"}}
       >
         <div className="between">
-          <div className="row g3" style={{minWidth: 0}}>
-            <AssetGlyph symbol={asset?.symbol ?? "??"} size={34} />
-            <div style={{minWidth: 0}}>
-              <div className="t-h4">
-                ${amount} of {symbol}
-              </div>
-              <div className="t-xs faint truncate">
-                {order.status === OrderStatus.CANCELLED
-                  ? "Cancelled — funds returned to your vault"
-                  : "Expired without executing — funds returned"}
-              </div>
-            </div>
-          </div>
+          <AssetIdentity
+            symbol={asset?.symbol ?? ""}
+            underlyingSymbol={`$${amount} of ${symbol}`}
+            variant="row"
+            sub={
+              order.status === OrderStatus.CANCELLED
+                ? "Cancelled — funds returned to your vault"
+                : "Expired without executing — funds returned"
+            }
+          />
           <span className="chip chip-inactive">
             {order.status === OrderStatus.CANCELLED ? "Cancelled" : "Expired"}
           </span>
@@ -152,13 +150,12 @@ export function OrderCard({
   return (
     <article className="module module-pad">
       <div className="between" style={{alignItems: "flex-start", marginBottom: 20}}>
-        <div className="row g3" style={{minWidth: 0}}>
-          <AssetGlyph symbol={asset?.symbol ?? "??"} size={38} />
-          <div style={{minWidth: 0}}>
-            <div className="t-h3">{symbol}</div>
-            <div className="t-xs faint truncate">{conditionPhrase(order.triggerType)}</div>
-          </div>
-        </div>
+        <AssetIdentity
+          symbol={asset?.symbol ?? ""}
+          underlyingSymbol={symbol}
+          variant="header"
+          sub={conditionPhrase(order.triggerType)}
+        />
         <span className="chip chip-waiting">
           <span className="dot" />
           {explain.attention ? "Needs attention" : "Waiting"}
@@ -171,6 +168,11 @@ export function OrderCard({
             Reserved
           </div>
           <div className="t-figure-sm">${amount}</div>
+          {stable && (
+            <div style={{marginTop: 6}}>
+              <TokenIdentity symbol={stable.symbol} size="xs" muted />
+            </div>
+          )}
         </div>
         {order.triggerType === TriggerType.NEXT_REGULAR_SESSION && market?.nextChangeAt && (
           <div>

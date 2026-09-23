@@ -5,7 +5,7 @@ import {MarketStatus} from "@bespeak/shared";
 import {assetBySymbol, REGISTRY} from "@/lib/server";
 import {OrderComposer} from "@/components/OrderComposer";
 import {Countdown} from "@/components/Countdown";
-import {AssetGlyph} from "@/components/ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {nextRegularSessionOpen, formatUtcShort} from "@/lib/format";
 
 export const revalidate = 15;
@@ -35,22 +35,21 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
 
       <div className="asset-head">
         <div>
-          <div className="row g4" style={{marginBottom: 20}}>
-            <AssetGlyph symbol={asset.symbol} size={48} />
-            <div style={{minWidth: 0}}>
-              <h1 className="t-h2" style={{marginBottom: 3}}>
-                {asset.name.replace(" xStock", "")}
-              </h1>
-              <div className="row wrap g2 t-sm muted">
-                <span style={{color: "var(--ink)", fontWeight: 500}}>
-                  {asset.underlyingSymbol}
-                </span>
-                <span className="faint">·</span>
-                <span>Official xStock</span>
-                <span className="faint">·</span>
-                <span className="faint">{asset.symbol}</span>
-              </div>
-            </div>
+          <div style={{marginBottom: 20}}>
+            <AssetIdentity
+              symbol={asset.symbol}
+              underlyingSymbol={asset.underlyingSymbol}
+              name={asset.name.replace(" xStock", "")}
+              variant="hero"
+              sub={
+                <>
+                  <span className="faint">·</span>
+                  <span>Official xStock</span>
+                  <span className="faint">·</span>
+                  <span className="faint">{asset.symbol}</span>
+                </>
+              }
+            />
           </div>
 
           <div className="facts">
@@ -80,8 +79,12 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
               <div className="t-label" style={{marginBottom: 8}}>
                 X Layer route
               </div>
-              <div className="t-figure-sm" style={{color: asset.route ? "var(--success)" : undefined}}>
-                {asset.route ? asset.route.quoteSymbol : "None"}
+              <div className="t-figure-sm">
+                {asset.route ? (
+                  <TokenIdentity symbol={asset.route.quoteSymbol} size="md" />
+                ) : (
+                  "None"
+                )}
               </div>
               <div className="t-xs faint" style={{marginTop: 4}}>
                 {asset.route
@@ -96,8 +99,17 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
           <div className="t-label" style={{marginBottom: 12}}>
             Execution route
           </div>
-          <div className="t-figure-sm" style={{marginBottom: 4}}>
-            {asset.route ? `${asset.route.quoteSymbol} pair` : "No route"}
+          <div className="t-figure-sm row g2" style={{marginBottom: 6}}>
+            {asset.route ? (
+              <>
+                <TokenIdentity symbol={asset.route.quoteSymbol} size="md" />
+                <span className="muted" style={{fontSize: 18}}>
+                  pair
+                </span>
+              </>
+            ) : (
+              "No route"
+            )}
           </div>
           <p className="t-xs faint prose" style={{margin: "0 0 16px"}}>
             {asset.route

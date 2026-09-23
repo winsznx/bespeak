@@ -3,7 +3,7 @@ import {observeSessions, type SessionObservation} from "@bespeak/conditions";
 import {MarketStatus} from "@bespeak/shared";
 import {REGISTRY, getDemand, deployment} from "@/lib/server";
 import {nextRegularSessionOpen, formatUtcShort} from "@/lib/format";
-import {AssetGlyph} from "@/components/ui/AssetGlyph";
+import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {Countdown} from "@/components/Countdown";
 import {HeroPlane} from "@/components/site/HeroPlane";
 
@@ -207,13 +207,12 @@ export default async function Landing() {
             const open = s?.marketStatus === MarketStatus.REGULAR;
             return (
               <div className="market-strip-row" key={sym}>
-                <div className="row g3" style={{minWidth: 0}}>
-                  <AssetGlyph symbol={a.symbol} />
-                  <div style={{minWidth: 0}}>
-                    <div className="t-h4">{a.underlyingSymbol}</div>
-                    <div className="t-xs faint truncate">{a.name.replace(" xStock", "")}</div>
-                  </div>
-                </div>
+                <AssetIdentity
+                  symbol={a.symbol}
+                  underlyingSymbol={a.underlyingSymbol}
+                  name={a.name.replace(" xStock", "")}
+                  variant="row"
+                />
                 <div className="cell-hide">
                   <div className="t-xs faint">Underlying</div>
                   <div className="t-sm">{open ? "Open" : "Closed"}</div>
@@ -225,8 +224,14 @@ export default async function Landing() {
                   </div>
                 </div>
                 <div className="cell-hide">
-                  <div className="t-xs faint">Pay with</div>
-                  <div className="t-sm">{a.route?.quoteSymbol ?? "—"}</div>
+                  <div className="t-xs faint" style={{marginBottom: 3}}>
+                    Pay with
+                  </div>
+                  {a.route ? (
+                    <TokenIdentity symbol={a.route.quoteSymbol} size="xs" />
+                  ) : (
+                    <div className="t-sm faint">—</div>
+                  )}
                 </div>
                 <Link href={`/asset/${a.symbol}`} className="btn btn-sm">
                   {open ? "Buy now" : "Schedule"}
