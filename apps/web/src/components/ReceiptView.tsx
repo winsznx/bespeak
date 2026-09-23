@@ -3,6 +3,7 @@ import {explorerTx} from "@bespeak/shared";
 import {formatAmount, formatUtc} from "@/lib/format";
 import type {StoredReceipt} from "@/lib/receipts";
 import {AssetIdentity, TokenIdentity} from "./identity";
+import {ExternalGlyph} from "./ui/ExternalLink";
 
 export interface ReceiptViewProps {
   receipt: StoredReceipt | null;
@@ -137,9 +138,10 @@ export function ReceiptView(p: ReceiptViewProps) {
               className="btn"
               href={explorerTx(receipt.transactionHash)}
               target="_blank"
-              rel="noreferrer"
+              rel="noreferrer noopener"
             >
               View on X Layer explorer
+              <ExternalGlyph />
             </a>
           )}
           <Link href="/orders" className="btn btn-quiet">

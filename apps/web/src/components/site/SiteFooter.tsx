@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {Mark} from "@/components/Wordmark";
+import {ExternalGlyph} from "@/components/ui/ExternalLink";
 
 const COLUMNS: Array<{title: string; links: Array<{href: string; label: string; external?: boolean}>}> = [
   {
@@ -61,11 +62,12 @@ export function SiteFooter() {
                     <a
                       key={l.label}
                       href={l.href}
-                      className="t-sm muted"
+                      className="t-sm muted row"
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noreferrer noopener"
                     >
                       {l.label}
+                      <ExternalGlyph />
                     </a>
                   ) : (
                     <Link key={l.label} href={l.href} className="t-sm muted">
