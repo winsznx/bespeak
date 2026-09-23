@@ -64,7 +64,9 @@ export default async function Landing() {
           </div>
 
           <div className="hero-stage">
-            {/* Floating product objects, as the reference floats analytics over its photo. */}
+            {/* Floats are children of the plane wrapper so they are offset from the plane's
+                own edges and can never overlap it, at any viewport width. */}
+            <div className="hero-plane-wrap">
             <div className="hero-float hero-float-l">
               <div className="t-label" style={{marginBottom: 10}}>
                 Market state
@@ -108,6 +110,7 @@ export default async function Landing() {
                 nextOpenLabel={formatUtcShort(nextOpen)}
               />
             )}
+            </div>
           </div>
         </div>
       </section>

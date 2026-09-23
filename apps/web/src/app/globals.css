@@ -917,7 +917,7 @@ button { font: inherit; }
 
 /* The product plane sits half-off the bottom edge, as the reference's photograph does. */
 .hero-plane {
-  width: min(560px, 100%);
+  width: 100%;
   max-width: 100%;
   min-width: 0;
   background: var(--surface);
@@ -928,36 +928,35 @@ button { font: inherit; }
   padding: var(--s-6);
 }
 
+/* Floats are anchored to the PLANE, not to the stage.
+   Positioning them against the full-width stage with percentage offsets made them march
+   inward as the viewport narrowed until they sat on top of the plane — covering the asset
+   logo and the market state. Offsetting from the plane's own edges with calc(100% + gap)
+   puts them permanently outside it at every width, so overlap is structurally impossible
+   rather than tuned per breakpoint. */
+.hero-plane-wrap {
+  position: relative;
+  width: min(560px, 100%);
+  min-width: 0;
+}
+
 .hero-float {
   position: absolute;
+  width: 200px;
   background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 14px 16px;
-  min-width: 186px;
 }
-.hero-float-l { left: 2%; top: 26%; }
-.hero-float-r { right: 2%; top: 38%; }
-.hero-float-b { right: 9%; bottom: 10%; }
+.hero-float-l { right: calc(100% + 32px); top: 6%; }
+.hero-float-b { right: calc(100% + 32px); top: calc(6% + 168px); }
+.hero-float-r { left: calc(100% + 32px); top: 24%; }
 
-@media (max-width: 1100px) {
-  .hero-float-b { display: none; }
-  .hero-float-l { left: -8px; top: 8%; }
-  .hero-float-r { right: -8px; top: 30%; }
-}
-@media (max-width: 860px) {
-  .hero { min-height: auto; padding-bottom: 0; }
+/* Below this the stage cannot hold the plane plus both float columns without clipping
+   them against the hero's rounded edge, so they are dropped rather than crowded. */
+@media (max-width: 1200px) {
   .hero-float { display: none; }
-  .hero-copy { max-width: none; }
-  .hero-lede { max-width: none; }
-  /* The plane's paired facts stack rather than forcing a two-column minimum. */
-  .hero-plane [data-plane-facts] { grid-template-columns: minmax(0, 1fr) !important; }
-  .hero-plane [data-plane-facts] > * + * {
-    border-left: 0 !important;
-    border-top: 1px solid var(--line);
-    padding-left: 0 !important;
-  }
 }
 
 /* ---- editorial sections ---- */
