@@ -9,7 +9,11 @@ import {Countdown} from "@/components/Countdown";
 import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {nextRegularSessionOpen, formatUtcShort} from "@/lib/format";
 
-export const revalidate = 15;
+/// The supported set is exactly the twelve verified assets, so they are prerendered and
+/// the route is closed to anything else. `dynamicParams: false` makes the router itself
+/// reject an unknown symbol, which is the only arrangement that yields a real 404 status
+/// rather than a correct-looking page served as 200.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -18,7 +22,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const {symbol} = await params;
   const asset = assetBySymbol(symbol);
-  if (!asset) return {title: "Asset not found", robots: {index: false, follow: false}};
+  // notFound() here as well as in the page: metadata resolves first, and a successful
+  // resolve commits a 200 before the page component ever throws — which is how a
+  // correct-looking "Asset not found" page ends up served as a soft 404.
+  if (!asset) notFound();
 
   const plain = asset.name.replace(" xStock", "");
   return {

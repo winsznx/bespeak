@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bespeak",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  // nodejs_compat is required by OpenNext's Node shims; global_fetch_strictly_public keeps
+  // server-side fetches to our own origin going through the public internet path, which is
+  // what the xStocks API and X Layer RPC calls expect.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

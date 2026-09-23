@@ -30,7 +30,7 @@ export function StatusPage({
         flexDirection: "column",
       }}
     >
-      <div className="site-inner" style={{paddingTop: 28}}>
+      <div className="site-inner" style={{paddingTop: 28, width: "100%"}}>
         <Link href="/" aria-label="Bespeak home">
           <Wordmark />
         </Link>
@@ -38,7 +38,7 @@ export function StatusPage({
 
       <div
         className="site-inner grow"
-        style={{display: "flex", alignItems: "center", paddingBottom: "10vh"}}
+        style={{display: "flex", alignItems: "center", paddingBottom: "10vh", width: "100%"}}
       >
         <div style={{maxWidth: 620}}>
           {code && (

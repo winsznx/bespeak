@@ -8,6 +8,7 @@ allowBuilds:
   keccak: true
   bufferutil: true
   utf-8-validate: true
+  workerd: true
 
 minimumReleaseAgeExclude:
   - '@x402/core@2.27.0'

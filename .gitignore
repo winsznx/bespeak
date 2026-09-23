@@ -38,3 +38,7 @@ apps/web/next-env.d.ts
 
 # generated evidence from live runs (receipts are committed deliberately, not incidentally)
 evidence/tmp/
+
+# opennext / cloudflare build output
+apps/web/.open-next/
+apps/web/.wrangler/
