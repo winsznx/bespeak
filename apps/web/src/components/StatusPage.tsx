@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {Wordmark} from "./Wordmark";
+import {BespeakLogo} from "./brand/BespeakLogo";
 
 /// The shared composition for 404 and error states.
 ///
@@ -32,7 +32,7 @@ export function StatusPage({
     >
       <div className="site-inner" style={{paddingTop: 28, width: "100%"}}>
         <Link href="/" aria-label="Bespeak home">
-          <Wordmark />
+          <BespeakLogo height={34} />
         </Link>
       </div>
 

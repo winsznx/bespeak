@@ -8,24 +8,33 @@
    ========================================================================= */
 
 :root {
-  /* ---- brand: clear institutional blue, not crypto neon ---------------- */
-  --brand-50:  #eef4fe;
-  --brand-100: #d9e7fd;
-  --brand-200: #b4cffb;
-  --brand-300: #7fadf6;
-  --brand-500: #2b7bea;
-  --brand-600: #1769e0;
-  --brand-700: #1058c6;
-  --brand-800: #0d47a0;
+  /* ---- brand ----------------------------------------------------------
+     --brand-600 is Bespeak Blue, locked by the brand system. The rest of the
+     ramp is lightness/saturation steps on that exact hue, so no tint can drift
+     away from the identity. See internal/BRAND_INTEGRATION.md. */
+  --brand-50:  #eff5fe;
+  --brand-100: #d7e6fd;
+  --brand-200: #b4d1fb;
+  --brand-300: #7eaff6;
+  --brand-500: #2c79ea;
+  --brand-600: #1f6fe5;  /* brand.json colors.brand_blue */
+  --brand-700: #0f56bf;
+  --brand-800: #0c479f;
 
-  /* ---- semantic hues (stable across themes) --------------------------- */
-  --green-600: #17794a;
+  /* ---- semantic hues (stable across themes) ---------------------------
+     Green means verified/filled and amber means waiting/held; neither is a
+     brand colour. The -600 steps carry the locked hue; the -700 steps are the
+     same hue darkened just far enough to clear WCAG AA where the token renders
+     small text on a light surface. */
+  --green-700: #1a7d4d;
+  --green-600: #1d8b55;  /* brand.json colors.success */
   --green-500: #1f9160;
   --green-300: #6fc79b;
-  --amber-700: #8a5a08;
-  --amber-600: #a86d0a;
+  --amber-700: #a06011;
+  --amber-600: #b56d13;  /* brand.json colors.waiting */
   --amber-300: #e0b45f;
-  --red-600:   #c23A2d;
+  --red-700:   #c63a3a;
+  --red-600:   #c94343;  /* brand.json colors.danger */
   --red-500:   #d1503f;
   --red-300:   #ef9b8e;
 
@@ -57,18 +66,18 @@
 
 :root,
 :root[data-theme="light"] {
-  --page: #ecedeb;          /* outer canvas the shell sits on */
-  --shell: #f8f8f6;         /* app shell */
+  --page: #eeefea;          /* brand.json colors.paper — outer canvas */
+  --shell: #f7f7f4;         /* brand.json colors.warm_white — app shell */
   --surface: #ffffff;       /* primary surface */
   --surface-2: #f3f4f2;     /* secondary surface */
   --surface-3: #eaebe8;     /* sunken / track */
 
-  --ink: #111316;
-  --ink-2: #6e7378;
+  --ink: #11171d;           /* brand.json colors.graphite */
+  --ink-2: #6f7883;         /* brand.json colors.muted */
   --ink-3: #9aa0a5;
 
-  --line: #e3e5e2;
-  --line-2: #d3d6d2;
+  --line: #d9dde1;          /* brand.json colors.line */
+  --line-2: #c0c7ce;
 
   --brand: var(--brand-600);
   --brand-hover: var(--brand-700);
@@ -76,18 +85,17 @@
   --brand-soft: var(--brand-50);
   --brand-line: var(--brand-200);
 
-  --success: var(--green-600);
-  --success-soft: #e7f4ed;
-  --success-line: #bfe0ce;
+  --success: var(--green-700);
+  --success-soft: #e7f4ee;
+  --success-line: #bfe0d0;
 
   --waiting: var(--amber-700);
-  --waiting-soft: #fbf3e4;
-  --waiting-line: #ecd9b0;
+  --waiting-soft: #fbf1e4;
+  --waiting-line: #ecd1b0;
 
-  --danger: var(--red-600);
-  --danger-soft: #fceceA;
-  --danger-soft: #fcecea;
-  --danger-line: #f2c8c2;
+  --danger: var(--red-700);
+  --danger-soft: #fceaea;
+  --danger-line: #f2c2c2;
 
   --inactive: var(--ink-3);
   --inactive-soft: #eeefec;
@@ -137,9 +145,9 @@
   --waiting-soft: #241d11;
   --waiting-line: #423520;
 
-  --danger: #e8877a;
-  --danger-soft: #271512;
-  --danger-line: #4a2620;
+  --danger: #e87a7a;
+  --danger-soft: #271212;
+  --danger-line: #4a2020;
 
   --inactive: var(--ink-3);
   --inactive-soft: #1d2023;
@@ -181,9 +189,9 @@
     --waiting: #dbab5e;
     --waiting-soft: #241d11;
     --waiting-line: #423520;
-    --danger: #e8877a;
-    --danger-soft: #271512;
-    --danger-line: #4a2620;
+    --danger: #e87a7a;
+    --danger-soft: #271212;
+    --danger-line: #4a2020;
     --inactive: #6b7076;
     --inactive-soft: #1d2023;
     --invert: #e9eae6;
@@ -539,6 +547,7 @@ button { font: inherit; }
 }
 
 .side-brand { padding: 0 8px; margin-bottom: var(--s-2); }
+.blogo.side-mark { display: none; }
 
 .side-group { display: flex; flex-direction: column; gap: 2px; }
 .side-group + .side-group { margin-top: var(--s-6); }
@@ -680,7 +689,11 @@ button { font: inherit; }
   .app-canvas { padding: 10px; }
   .app-shell { min-height: calc(100dvh - 20px); border-radius: 24px; }
   .side { padding: var(--s-5) 10px var(--s-4); align-items: center; }
+  /* The rail is narrower than the lockup's 96px minimum, so the standalone mark takes over
+     rather than letting the wordmark clip against the shell edge. */
   .side-brand { padding: 0; }
+  .blogo.side-lockup { display: none; }
+  .blogo.side-mark { display: inline-flex; }
   .side-label, .side-link span.label, .side-link .count, .side-foot { display: none; }
   .side-link { justify-content: center; padding: 0; width: 44px; }
   .side-link[data-active="true"]::before { left: -11px; }
@@ -1357,4 +1370,23 @@ button.searchfield { text-align: left; font: inherit; color: var(--ink-3); }
 }
 @media (max-width: 900px) {
   .zero { grid-template-columns: minmax(0, 1fr); padding: var(--s-6); }
+}
+
+/* ---- brand lockup: theme-correct variant, never a filter ---------------- */
+/* The reversed master is fully white, including the execution node that is blue on light,
+   so no filter over the light file can produce it. Both are in the DOM and CSS reveals the
+   correct one, which survives the pre-paint theme bootstrap without a flash. */
+/* The variant rules carry the same specificity as the shared img rule and come after it,
+   so whichever one wins is decided by theme and not by selector weight. */
+.blogo { display: inline-flex; align-items: center; }
+.blogo img { height: 100%; width: auto; }
+.blogo img.blogo-light { display: block; }
+.blogo img.blogo-dark { display: none; }
+
+:root[data-theme="dark"] .blogo img.blogo-light { display: none; }
+:root[data-theme="dark"] .blogo img.blogo-dark { display: block; }
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] .blogo img.blogo-light { display: none; }
+  :root[data-theme="system"] .blogo img.blogo-dark { display: block; }
 }

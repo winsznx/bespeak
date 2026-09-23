@@ -38,7 +38,7 @@ function RainbowKitSkin({children}: {children: React.ReactNode}) {
   const resolved = useResolvedTheme();
 
   const shared = {
-    accentColor: "#1769e0",
+    accentColor: "#1f6fe5",
     accentColorForeground: "#ffffff",
     borderRadius: "medium",
     fontStack: "system",

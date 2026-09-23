@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {useAccount} from "wagmi";
-import {Wordmark} from "@/components/Wordmark";
+import {BespeakLogo, BespeakMark} from "@/components/brand/BespeakLogo";
 import {Icon, type IconName} from "@/components/ui/Icon";
 import {WalletModule} from "./WalletModule";
 
@@ -30,7 +30,8 @@ export function Sidebar({activeOrders}: {activeOrders?: number}) {
     <aside className="side">
       <div className="side-brand">
         <Link href="/" aria-label="Bespeak home">
-          <Wordmark />
+          <BespeakLogo height={34} className="side-lockup" />
+          <BespeakMark size={26} className="side-mark" />
         </Link>
       </div>
 

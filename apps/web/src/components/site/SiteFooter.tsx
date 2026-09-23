@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {Mark} from "@/components/Wordmark";
+import {BespeakLogo} from "@/components/brand/BespeakLogo";
 import {ExternalGlyph} from "@/components/ui/ExternalLink";
 
 const COLUMNS: Array<{title: string; links: Array<{href: string; label: string; external?: boolean}>}> = [
@@ -39,9 +39,8 @@ export function SiteFooter() {
       <div className="site-inner">
         <div className="footer-grid">
           <div>
-            <span className="row g2" style={{marginBottom: 14}}>
-              <Mark size={17} />
-              <span className="t-h4">Bespeak</span>
+            <span className="row" style={{marginBottom: 14}}>
+              <BespeakLogo height={34} />
             </span>
             <p className="t-sm muted prose" style={{margin: 0, maxWidth: "42ch"}}>
               Condition-aware standing orders for tokenized equities on X Layer. Bespeak does

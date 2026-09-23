@@ -24,8 +24,8 @@ export default function GlobalError({
           minHeight: "100vh",
           display: "grid",
           placeItems: "center",
-          background: "#ecedeb",
-          color: "#111316",
+          background: "#eeefea",
+          color: "#11171d",
           fontFamily: "ui-sans-serif, system-ui, sans-serif",
           padding: 24,
         }}
@@ -34,7 +34,7 @@ export default function GlobalError({
           <h1 style={{fontSize: 30, letterSpacing: "-0.03em", margin: "0 0 12px"}}>
             Bespeak could not load
           </h1>
-          <p style={{color: "#6e7378", lineHeight: 1.55, margin: "0 0 24px"}}>
+          <p style={{color: "#6f7883", lineHeight: 1.55, margin: "0 0 24px"}}>
             Your vault balance and standing orders are held on X Layer and are unaffected by
             this. Reload to try again.
           </p>
@@ -44,8 +44,8 @@ export default function GlobalError({
               height: 44,
               padding: "0 20px",
               borderRadius: 12,
-              border: "1px solid #1769e0",
-              background: "#1769e0",
+              border: "1px solid #1f6fe5",
+              background: "#1f6fe5",
               color: "#fff",
               fontSize: 15,
               fontWeight: 500,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {Wordmark} from "@/components/Wordmark";
+import {BespeakLogo} from "@/components/brand/BespeakLogo";
 import {ThemeToggle} from "@/components/app/ThemeToggle";
 
 const LINKS = [
@@ -19,7 +19,7 @@ export function SiteNav() {
       <div className="site-inner">
         <nav className="site-nav-bar" aria-label="Site">
           <Link href="/" aria-label="Bespeak home">
-            <Wordmark size={18} />
+            <BespeakLogo height={32} />
           </Link>
           <div className="site-nav-links">
             {LINKS.map((l) => (

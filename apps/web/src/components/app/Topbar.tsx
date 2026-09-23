@@ -2,7 +2,7 @@
 
 import {useEffect, useRef, useState} from "react";
 import Link from "next/link";
-import {Wordmark} from "@/components/Wordmark";
+import {BespeakLogo} from "@/components/brand/BespeakLogo";
 import {ConnectButton, NetworkButton} from "@/components/ConnectButton";
 import {ThemeToggle} from "./ThemeToggle";
 import {CommandSearch} from "./CommandSearch";
@@ -28,7 +28,7 @@ export function Topbar() {
   return (
     <header className="topbar">
       <Link href="/" className="mobile-brand" aria-label="Bespeak home">
-        <Wordmark size={18} />
+        <BespeakLogo height={30} />
       </Link>
 
       <button
