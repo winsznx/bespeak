@@ -48,10 +48,10 @@ export const metadata: Metadata = {
       "Condition-aware standing orders for tokenized equities on X Layer.",
     images: [
       {
-        url: "/og.png",
+        url: "/brand/social/og.png",
         width: 1200,
         height: 630,
-        alt: "Bespeak — set the market moment. A standing order for NVDA waiting on the next regular session.",
+        alt: "Bespeak — set the market moment. Condition-aware standing orders for tokenized equities on X Layer.",
       },
     ],
   },
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     title: "Bespeak — Set the market moment",
     description:
       "Condition-aware standing orders for tokenized equities on X Layer.",
-    images: ["/og.png"],
+    images: ["/brand/social/og.png"],
   },
   manifest: "/manifest.webmanifest",
   robots: {
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    {media: "(prefers-color-scheme: light)", color: "#ecedeb"},
+    {media: "(prefers-color-scheme: light)", color: "#EEEFEA"},
     {media: "(prefers-color-scheme: dark)", color: "#0d0f11"},
   ],
   width: "device-width",
