@@ -10,6 +10,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const core: MetadataRoute.Sitemap = [
     {url: SITE_URL, lastModified: now, changeFrequency: "daily", priority: 1},
+    // The address given to reviewers, and often the first page anyone opens.
+    {url: `${SITE_URL}/demo`, lastModified: now, changeFrequency: "monthly", priority: 0.9},
     {url: `${SITE_URL}/markets`, lastModified: now, changeFrequency: "hourly", priority: 0.9},
     {url: `${SITE_URL}/demand`, lastModified: now, changeFrequency: "daily", priority: 0.6},
     {url: `${SITE_URL}/automations`, lastModified: now, changeFrequency: "monthly", priority: 0.5},
