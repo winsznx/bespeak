@@ -1372,21 +1372,27 @@ button.searchfield { text-align: left; font: inherit; color: var(--ink-3); }
   .zero { grid-template-columns: minmax(0, 1fr); padding: var(--s-6); }
 }
 
-/* ---- brand lockup: theme-correct variant, never a filter ---------------- */
+/* ---- brand lockup: theme-correct master, one element ---------------------- */
 /* The reversed master is fully white, including the execution node that is blue on light,
-   so no filter over the light file can produce it. Both are in the DOM and CSS reveals the
-   correct one, which survives the pre-paint theme bootstrap without a flash. */
-/* The variant rules carry the same specificity as the shared img rule and come after it,
-   so whichever one wins is decided by theme and not by selector weight. */
+   so no filter over the light file can produce it. The element ships with the light master
+   as its real src and CSS swaps the file for dark themes. Only one <img> ever exists, so a
+   stale or missing stylesheet degrades to the light lockup rather than rendering the
+   wordmark twice. */
 .blogo { display: inline-flex; align-items: center; }
-.blogo img { height: 100%; width: auto; }
-.blogo img.blogo-light { display: block; }
-.blogo img.blogo-dark { display: none; }
+.blogo img { display: block; height: 100%; width: auto; }
 
-:root[data-theme="dark"] .blogo img.blogo-light { display: none; }
-:root[data-theme="dark"] .blogo img.blogo-dark { display: block; }
+:root[data-theme="dark"] .blogo img.blogo-lockup {
+  content: url("/brand/logos/bespeak-logo-reversed.svg");
+}
+:root[data-theme="dark"] .blogo img.blogo-micro {
+  content: url("/brand/logos/bespeak-micro-white.svg");
+}
 
 @media (prefers-color-scheme: dark) {
-  :root[data-theme="system"] .blogo img.blogo-light { display: none; }
-  :root[data-theme="system"] .blogo img.blogo-dark { display: block; }
+  :root[data-theme="system"] .blogo img.blogo-lockup {
+    content: url("/brand/logos/bespeak-logo-reversed.svg");
+  }
+  :root[data-theme="system"] .blogo img.blogo-micro {
+    content: url("/brand/logos/bespeak-micro-white.svg");
+  }
 }
