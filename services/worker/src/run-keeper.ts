@@ -1,5 +1,6 @@
 import {writeFileSync, mkdirSync} from "node:fs";
-import {join} from "node:path";
+import {join, dirname} from "node:path";
+import {fileURLToPath} from "node:url";
 import {formatEther, type Address, type Hash} from "viem";
 import {BespeakOrderManagerAbi} from "@bespeak/sdk";
 import {xLayer, TriggerType} from "@bespeak/shared";
@@ -28,7 +29,11 @@ import assetManifest from "@bespeak/assets/manifest" with {type: "json"};
 import {verifyExecution} from "./verifier.js";
 import {finalizeReceipt, attestedTierLimitations, type BespeakReceipt} from "./receipt.js";
 
-const EVIDENCE_DIR = process.env.BESPEAK_EVIDENCE_DIR ?? "evidence/executions";
+/// Receipts go to the repo root so the worker that writes them and the web app that serves
+/// them agree on one location, regardless of which directory either was started from.
+const EVIDENCE_DIR =
+  process.env.BESPEAK_EVIDENCE_DIR ??
+  join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "evidence", "executions");
 
 /// One keeper pass.
 ///

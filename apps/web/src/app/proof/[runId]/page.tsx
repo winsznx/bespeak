@@ -2,6 +2,7 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import {explorerTx} from "@bespeak/shared";
 import {OnChainRef} from "@/components/ui/OnChainRef";
+import {ExternalLink} from "@/components/ui/ExternalLink";
 import {loadReceiptById, listReceipts} from "@/lib/receipts";
 import {REGISTRY} from "@/lib/server";
 import {formatAmount} from "@/lib/format";
@@ -76,11 +77,19 @@ export default async function ProofPage({params}: {params: Promise<{runId: strin
           <dt>Asset</dt>
           <dd>{String(receipt.assetSymbol)}</dd>
           <dt>Underlying on X Layer</dt>
-          <dd>{asset?.underlying ?? String(receipt.underlyingAddress)}</dd>
+          <dd>
+            <OnChainRef value={asset?.underlying ?? String(receipt.underlyingAddress)} />
+          </dd>
           <dt>Current wrapper</dt>
-          <dd>{asset?.wrapper ?? "none"}</dd>
+          <dd>{asset?.wrapper ? <OnChainRef value={asset.wrapper} /> : "none"}</dd>
           <dt>Registry source</dt>
-          <dd>{REGISTRY.sourceUri}</dd>
+          <dd>
+            <ExternalLink href={REGISTRY.sourceUri} className="ref-link">
+              <span className="ref-value mono">
+                <span className="ref-head">{REGISTRY.sourceUri}</span>
+              </span>
+            </ExternalLink>
+          </dd>
           <dt>Registry revision</dt>
           <dd>
             <OnChainRef value={REGISTRY.sourceRevision} kind="hash" />

@@ -1,6 +1,8 @@
 import "server-only";
 import {readFile, readdir} from "node:fs/promises";
-import {join} from "node:path";
+import {join, dirname} from "node:path";
+import {fileURLToPath} from "node:url";
+import {BUNDLED_RECEIPTS} from "./receipts.generated";
 
 export interface StoredReceipt {
   receiptId: string;
@@ -28,7 +30,14 @@ export interface StoredReceipt {
   [k: string]: unknown;
 }
 
-const DIR = process.env.BESPEAK_EVIDENCE_DIR ?? "evidence/executions";
+/// Receipts live at the repo root, written there by the worker and read here. The path is
+/// resolved from this module rather than from `process.cwd()`, because the web app's
+/// working directory is `apps/web` in development and something else again under the
+/// worker runtime, and a relative default silently resolved to a directory that never
+/// existed — the proof page rendered "not found" for receipts that were on disk.
+const DIR =
+  process.env.BESPEAK_EVIDENCE_DIR ??
+  join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..", "evidence", "executions");
 
 /// Receipts are files on disk, content-addressed by their own hash.
 ///
@@ -47,15 +56,22 @@ export async function loadReceipt(orderId: string): Promise<StoredReceipt | null
   } catch {
     // No evidence directory yet is a normal state before the first execution.
   }
+  for (const r of Object.values(BUNDLED_RECEIPTS)) {
+    if (r.orderId?.toLowerCase() === orderId.toLowerCase()) return r;
+  }
   return null;
 }
 
 export async function loadReceiptById(receiptId: string): Promise<StoredReceipt | null> {
+  // Disk first, so a receipt written moments ago is served before the next build. The
+  // bundle is the fallback and the only source that exists on the worker, which has no
+  // filesystem; without it the proof pages 404 in production while the receipts sit in
+  // the repo.
   try {
     const raw = await readFile(join(DIR, `${receiptId}.json`), "utf8");
     return JSON.parse(raw) as StoredReceipt;
   } catch {
-    return null;
+    return BUNDLED_RECEIPTS[receiptId] ?? null;
   }
 }
 
@@ -67,8 +83,8 @@ export async function listReceipts(): Promise<StoredReceipt[]> {
       if (!f.endsWith(".json")) continue;
       out.push(JSON.parse(await readFile(join(DIR, f), "utf8")) as StoredReceipt);
     }
-    return out;
+    return out.length ? out : Object.values(BUNDLED_RECEIPTS);
   } catch {
-    return [];
+    return Object.values(BUNDLED_RECEIPTS);
   }
 }
