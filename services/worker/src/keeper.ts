@@ -2,7 +2,13 @@ import {formatEther, type Address, type Hash} from "viem";
 import {BespeakOrderManagerAbi, BespeakVaultAbi, AssetRegistryAbi} from "@bespeak/sdk";
 import {reasonFromCode, TriggerType, MarketStatus, type Reason} from "@bespeak/shared";
 import {observeSessions, signObservation, type SessionObservation} from "@bespeak/conditions";
-import {OkxDexClient, validateRoute} from "@bespeak/okx";
+import {
+  OkxDexClient,
+  validateRoute,
+  buildDirectRoute,
+  assertVerifiedVenue,
+} from "@bespeak/okx";
+import assetManifest from "@bespeak/assets/manifest" with {type: "json"};
 import {
   POLICY,
   deployment,
@@ -78,6 +84,10 @@ export interface OrderAssessment {
   reason: Reason;
   detail: string;
   observation: SessionObservation | null;
+  /// Which venue priced the attempt. Recorded because "what was this filled against" is
+  /// part of the evidence, and the two sources do not carry the same guarantees: the
+  /// aggregator searches venues, the direct route only knows the pool the registry pinned.
+  routeSource?: "okx-aggregator" | "uniswap-v3-direct";
 }
 
 export async function loadActiveOrders(): Promise<OrderView[]> {
@@ -140,6 +150,18 @@ async function buildEvidence(
 /// Every refusal below comes from `checkExecution`, which is the same function `execute`
 /// runs. The keeper never forms its own opinion about eligibility, so it cannot execute
 /// something the contract would have refused, nor hold something the contract would allow.
+/// Fee tier of the pool the registry recorded for an asset.
+///
+/// The on-chain registry stores identity and the output token, not venue parameters, so
+/// the tier comes from the same pinned manifest whose revision the receipt cites. Returns
+/// undefined rather than guessing a tier: quoting the wrong pool would silently price
+/// against liquidity nobody verified.
+function poolFeeTierFor(symbol: string | undefined): number | undefined {
+  if (!symbol) return undefined;
+  const entry = assetManifest.assets.find((a) => a.symbol === symbol);
+  return entry?.route?.feeTier;
+}
+
 export async function assessOrder(
   order: OrderView,
   symbolFor: Map<Hash, string>,
@@ -195,7 +217,13 @@ export async function assessOrder(
     return {orderId: order.id, projected: "HELD", reason: "ASSET_NOT_SUPPORTED", detail: "no output token in registry", observation};
   }
 
+  // Two route sources, tried in order. OKX aggregates across venues and normally prices
+  // better, so it stays primary. The direct pool is the fallback: it knows only the single
+  // pool the registry recorded, but it needs no credentials, which is the difference
+  // between a conditioned order executing and the engine stalling on an API key.
   let route;
+  let routeSource: "okx-aggregator" | "uniswap-v3-direct";
+  const routeErrors: string[] = [];
   try {
     const okx = new OkxDexClient(okxCredentials());
     const chain = await okx.supportedChain();
@@ -212,9 +240,41 @@ export async function assessOrder(
       maxAmountIn: order.amountIn,
       minAmountOut: order.minAmountOut,
     });
+    routeSource = "okx-aggregator";
     lastRouteFetch = new Date().toISOString();
   } catch (e) {
-    return {orderId: order.id, projected: "HELD", reason: "NO_ROUTE", detail: String(e), observation};
+    routeErrors.push(`okx: ${String(e)}`);
+    try {
+      const feeTier = poolFeeTierFor(symbolFor.get(order.assetId));
+      if (feeTier === undefined) throw new Error("no recorded pool fee tier for this asset");
+      // Fails closed unless the router and quoter belong to the same v3 deployment the
+      // pools were discovered in.
+      await assertVerifiedVenue(client);
+      const direct = await buildDirectRoute(client, {
+        fromToken: order.inputToken,
+        toToken: outputToken,
+        amount: order.amountIn,
+        feeTier,
+        slippageBps: order.maxSlippageBps,
+        receiver: order.receiver,
+        caller: d.executionAdapter,
+      });
+      // The user's floor always governs; the contract enforces it again regardless.
+      const minReceive =
+        direct.minReceive > order.minAmountOut ? direct.minReceive : order.minAmountOut;
+      route = {...direct, minReceive};
+      routeSource = "uniswap-v3-direct";
+      lastRouteFetch = new Date().toISOString();
+    } catch (e2) {
+      routeErrors.push(`direct: ${String(e2)}`);
+      return {
+        orderId: order.id,
+        projected: "HELD",
+        reason: "NO_ROUTE",
+        detail: routeErrors.join(" | "),
+        observation,
+      };
+    }
   }
 
   const req = {
@@ -238,10 +298,10 @@ export async function assessOrder(
   const reason = reasonFromCode(Number(code));
   if (reason !== "OK") {
     const waiting = reason === "MARKET_CLOSED" || reason === "NOT_YET_VALID" || reason === "ASSET_NOT_AVAILABLE";
-    return {orderId: order.id, projected: waiting ? "WAITING" : "HELD", reason, detail: "", observation};
+    return {orderId: order.id, projected: waiting ? "WAITING" : "HELD", reason, detail: "", observation, routeSource};
   }
 
-  return {orderId: order.id, projected: "ELIGIBLE", reason: "OK", detail: "", observation};
+  return {orderId: order.id, projected: "ELIGIBLE", reason: "OK", detail: "", observation, routeSource};
 }
 
 /// Capture the balances an execution will be verified against, BEFORE submitting.

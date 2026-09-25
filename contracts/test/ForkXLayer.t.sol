@@ -32,6 +32,13 @@ contract ForkXLayerTest is Test {
     address constant NVDAX = 0xc845b2894dBddd03858fd2D643B4eF725fE0849d;
     address constant WNVDAX = 0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5;
 
+    // The v3 deployment the pools belong to. The factory was found by tracing real xStock
+    // transfer counterparties on chain; the router and quoter are checked against it in the
+    // test below rather than trusted from a documentation page.
+    address constant V3_FACTORY = 0x4B2ab38DBF28D31D467aA8993f6c2585981D6804;
+    address constant SWAP_ROUTER_02 = 0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA;
+    address constant QUOTER_V2 = 0xD1b797D92d87B688193A2B976eFc8D577D204343;
+
     bytes32 constant ASSET_NVDA = keccak256("nvda-canonical");
 
     AssetRegistry registry;
@@ -220,6 +227,167 @@ contract ForkXLayerTest is Test {
         assertEq(uint8(manager.getOrder(orderId).status), uint8(OrderStatus.ACTIVE));
         assertEq(vault.totalReserved(USDC), 100e6);
     }
+
+    /// A conditioned order actually fills, against the real pool, through the whole stack.
+    ///
+    /// The other fork tests prove capital is held correctly when execution is refused. This
+    /// proves the opposite branch: that when the condition is met and a route exists, the
+    /// user ends up holding the asset. It uses the same direct Uniswap v3 route the keeper
+    /// falls back to when the aggregator is unavailable, so the calldata under test is the
+    /// calldata that would be broadcast.
+    ///
+    /// Nothing here is mocked except the clock and the seeded balance: the router, quoter,
+    /// pool, USDG and wNVDAx are all live mainnet contracts read through the fork.
+    function test_fork_directRouteActuallyFills() public onlyFork {
+        uint256 amountIn = 5e6; // $5, small enough that price impact is negligible
+
+        // The router and quoter must belong to the same v3 deployment the pools live in.
+        assertEq(IUniswapFactoryOf(SWAP_ROUTER_02).factory(), V3_FACTORY, "router factory");
+        assertEq(IUniswapFactoryOf(QUOTER_V2).factory(), V3_FACTORY, "quoter factory");
+
+        uint256 quoted = _quote(USDG, WNVDAX, amountIn, 500);
+        assertGt(quoted, 0, "pool quoted a non-zero output");
+
+        vm.startPrank(admin);
+        routers.setRouter(SWAP_ROUTER_02, true);
+        routers.setApproveTarget(SWAP_ROUTER_02, true);
+        vm.stopPrank();
+
+        _seed(USDG, user, amountIn);
+        factory.ensureVault(user);
+        BespeakVault vault = BespeakVault(factory.vaultOf(user));
+
+        vm.startPrank(user);
+        IERC20(USDG).approve(address(vault), amountIn);
+        vault.deposit(USDG, amountIn);
+        bytes32 orderId = manager.createOrder(
+            BespeakOrderManager.CreateOrderParams({
+                inputToken: USDG,
+                assetId: ASSET_NVDA,
+                receiver: user,
+                triggerType: TriggerType.IMMEDIATE,
+                amountIn: amountIn,
+                minAmountOut: (quoted * 9925) / 10_000, // the user's own floor, 75bps
+                maxSlippageBps: 75,
+                maxReferenceDeviationBps: 100,
+                validAfter: 0,
+                expiresAt: uint64(block.timestamp + 1 days),
+                minSourceTier: SourceTier.ATTESTED_SESSION
+            })
+        );
+        vm.stopPrank();
+
+        uint256 beforeBal = IERC20(WNVDAX).balanceOf(user);
+
+        bytes memory routerCalldata = abi.encodeWithSelector(
+            IV3SwapRouter.exactInputSingle.selector,
+            IV3SwapRouter.ExactInputSingleParams({
+                tokenIn: USDG,
+                tokenOut: WNVDAX,
+                fee: 500,
+                recipient: user,
+                amountIn: amountIn,
+                amountOutMinimum: (quoted * 9925) / 10_000,
+                sqrtPriceLimitX96: 0
+            })
+        );
+
+        vm.prank(keeper);
+        (uint256 spent, uint256 received) = manager.execute(
+            orderId,
+            BespeakOrderManager.ExecutionRequest({
+                router: SWAP_ROUTER_02,
+                approveTarget: SWAP_ROUTER_02,
+                amountIn: amountIn,
+                minAmountOut: (quoted * 9925) / 10_000,
+                quoteTimestamp: uint64(block.timestamp),
+                quoteHash: keccak256(routerCalldata),
+                routerCalldata: routerCalldata,
+                conditionEvidence: ""
+            })
+        );
+
+        // The adapter measures delivery from balance deltas, so these are what the chain
+        // did, not what the router claimed.
+        assertEq(spent, amountIn, "spent exactly the reserved amount");
+        assertGt(received, 0, "received a non-zero amount of the asset");
+        assertEq(
+            IERC20(WNVDAX).balanceOf(user) - beforeBal,
+            received,
+            "the asset landed with the user, in the amount the receipt reports"
+        );
+        assertEq(uint8(manager.getOrder(orderId).status), uint8(OrderStatus.FILLED));
+        assertEq(vault.totalReserved(USDG), 0, "the reservation was consumed, not stranded");
+
+        // An order fills at most once.
+        vm.prank(keeper);
+        vm.expectRevert();
+        manager.execute(
+            orderId,
+            BespeakOrderManager.ExecutionRequest({
+                router: SWAP_ROUTER_02,
+                approveTarget: SWAP_ROUTER_02,
+                amountIn: amountIn,
+                minAmountOut: 0,
+                quoteTimestamp: uint64(block.timestamp),
+                quoteHash: keccak256(routerCalldata),
+                routerCalldata: routerCalldata,
+                conditionEvidence: ""
+            })
+        );
+    }
+
+    /// QuoterV2 reverts to return its result, so it is a state-changing call even though it
+    /// changes nothing permanently.
+    function _quote(address tokenIn, address tokenOut, uint256 amountIn, uint24 fee)
+        internal
+        returns (uint256 out)
+    {
+        (out,,,) = IQuoterV2(QUOTER_V2).quoteExactInputSingle(
+            IQuoterV2.QuoteExactInputSingleParams({
+                tokenIn: tokenIn,
+                tokenOut: tokenOut,
+                amountIn: amountIn,
+                fee: fee,
+                sqrtPriceLimitX96: 0
+            })
+        );
+    }
+}
+
+interface IUniswapFactoryOf {
+    function factory() external view returns (address);
+}
+
+interface IV3SwapRouter {
+    struct ExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint24 fee;
+        address recipient;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    function exactInputSingle(ExactInputSingleParams calldata params)
+        external
+        payable
+        returns (uint256 amountOut);
+}
+
+interface IQuoterV2 {
+    struct QuoteExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        uint256 amountIn;
+        uint24 fee;
+        uint160 sqrtPriceLimitX96;
+    }
+
+    function quoteExactInputSingle(QuoteExactInputSingleParams memory params)
+        external
+        returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 ticksCrossed, uint256 gasEstimate);
 }
 
 interface IERC20Meta {
