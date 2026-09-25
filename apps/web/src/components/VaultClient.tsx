@@ -275,6 +275,18 @@ function DepositCard({
   });
   const bal = (walletBalance.data as bigint | undefined) ?? 0n;
 
+  // Checked before the wallet is opened, not after it rejects. Asking someone to sign a
+  // transfer that cannot succeed spends their attention and teaches them to distrust the
+  // prompt. Parsing can throw on a half-typed number, which is not an error worth showing.
+  const overBalance = (() => {
+    if (!amount) return false;
+    try {
+      return parseUnits(amount, stable.decimals) > bal;
+    } catch {
+      return false;
+    }
+  })();
+
   async function deposit() {
     const d = clientDeployment();
     if (!d || !address || !publicClient) return;
@@ -364,10 +376,18 @@ function DepositCard({
       <button
         className="btn btn-primary btn-block"
         onClick={deposit}
-        disabled={Boolean(busy) || !amount}
+        disabled={Boolean(busy) || !amount || overBalance}
       >
-        {busy ?? `Deposit ${stable.symbol}`}
+        {busy ?? (overBalance ? `Not enough ${stable.symbol}` : `Deposit ${stable.symbol}`)}
       </button>
+      {overBalance && (
+        <p className="t-xs faint" style={{margin: "10px 0 0"}}>
+          Your wallet holds {formatAmount(bal, stable.decimals)} {stable.symbol}. Note that
+          X Layer carries more than one token called {stable.symbol}; Bespeak uses the one
+          its routes are actually executable against, and a bridged version of the same name
+          will not appear here.
+        </p>
+      )}
       {err && (
         <p className="t-sm" style={{color: "var(--danger)", margin: "10px 0 0"}}>
           {err}
@@ -392,6 +412,17 @@ function WithdrawCard({
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Reserved balance backs live orders and cannot be withdrawn, so the limit here is what
+  // is available rather than the vault total.
+  const overAvailable = (() => {
+    if (!amount || vault.available === null) return false;
+    try {
+      return parseUnits(amount, stable.decimals) > vault.available;
+    } catch {
+      return false;
+    }
+  })();
 
   async function withdraw() {
     if (!vault.address || !address || !publicClient) return;
@@ -446,9 +477,13 @@ function WithdrawCard({
       <button
         className="btn btn-block"
         onClick={withdraw}
-        disabled={busy || !amount || !vault.exists}
+        disabled={busy || !amount || !vault.exists || overAvailable}
       >
-        {busy ? "Withdrawing…" : `Withdraw ${stable.symbol}`}
+        {busy
+          ? "Withdrawing…"
+          : overAvailable
+            ? `Only ${vault.availableFormatted} available`
+            : `Withdraw ${stable.symbol}`}
       </button>
       {err && (
         <p className="t-sm" style={{color: "var(--danger)", margin: "10px 0 0"}}>
