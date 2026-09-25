@@ -2,7 +2,6 @@ import type {Metadata, Viewport} from "next";
 import {Instrument_Sans, Newsreader, IBM_Plex_Mono} from "next/font/google";
 import "@rainbow-me/rainbowkit/styles.css";
 import "./globals.css";
-import {headers} from "next/headers";
 import {Providers} from "@/components/Providers";
 import {THEME_BOOTSTRAP} from "@/components/theme";
 
@@ -80,12 +79,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({children}: {children: React.ReactNode}) {
-  // Forward the raw cookie to the client boundary. wagmi's config is built by
-  // RainbowKit's getDefaultConfig, which is a client-only function, so the initial state
-  // has to be derived on the client side of the boundary rather than here.
-  const cookie = (await headers()).get("cookie");
-
+export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html
       lang="en"
@@ -96,7 +90,7 @@ export default async function RootLayout({children}: {children: React.ReactNode}
         <script dangerouslySetInnerHTML={{__html: THEME_BOOTSTRAP}} />
       </head>
       <body>
-        <Providers cookie={cookie}>{children}</Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

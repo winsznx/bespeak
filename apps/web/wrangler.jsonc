@@ -16,6 +16,12 @@
   // rendered as "outcome not yet confirmed" in production.
   "kv_namespaces": [
     {
+      // Next's incremental cache. Without a store that outlives an isolate, revalidate and
+      // the fetch cache do nothing in production and every cold request rebuilds the page.
+      "binding": "NEXT_INC_CACHE_KV",
+      "id": "5d69228b6d1a40ad9c5199dcd0d9fb7a"
+    },
+    {
       "binding": "RECEIPTS",
       "id": "484c200eb766414d92ac13644beec33c"
     }

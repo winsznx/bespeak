@@ -10,15 +10,19 @@ import {ThemeProvider, useResolvedTheme} from "./theme";
 /// Provider order is load-bearing: Wagmi, then React Query, then RainbowKit.
 /// `initialState` comes from the cookie the server read, which is what keeps the connect
 /// button from flashing between disconnected and connected during hydration.
-export function Providers({
-  children,
-  cookie,
-}: {
-  children: React.ReactNode;
-  cookie: string | null;
-}) {
+export function Providers({children}: {children: React.ReactNode}) {
   const [queryClient] = useState(() => new QueryClient());
-  const [initialState] = useState(() => cookieToInitialState(wagmiConfig, cookie));
+  // The cookie is read here rather than handed down from the server. Reading it in the root
+  // layout meant calling `headers()`, which opts every route in the application into dynamic
+  // rendering: `revalidate` never applied to a single page and each request re-rendered from
+  // scratch. Every page carried that cost so the wallet pill could skip one frame.
+  //
+  // This initialiser runs on the client during hydration, where document.cookie holds the
+  // same value. On the server it is undefined and the state starts empty, which is what the
+  // connect button already assumes — it renders nothing until mounted.
+  const [initialState] = useState(() =>
+    cookieToInitialState(wagmiConfig, typeof document === "undefined" ? null : document.cookie),
+  );
 
   return (
     <WagmiProvider config={wagmiConfig} initialState={initialState}>
