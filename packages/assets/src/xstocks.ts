@@ -76,8 +76,23 @@ interface AssetsPage {
   page: {currentPage: number; hasNextPage: boolean};
 }
 
+/// How long a fetched issuer page may be reused, in seconds.
+///
+/// Next defaults `fetch` to no-store, which also opts the calling route out of its own
+/// `revalidate`. The in-process cache below then did nothing in production, because each
+/// Cloudflare isolate starts empty and isolates are recycled constantly: a cold request
+/// re-paginated the whole 11-page catalogue, and the first call after a quiet period took
+/// tens of seconds. Opting in here moves the cache to a layer that survives isolate
+/// recycling. Ignored outside Next, so the keeper is unaffected.
+const ISSUER_REVALIDATE_S = Number(process.env.XSTOCKS_FETCH_REVALIDATE_S ?? 45);
+
 async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, {headers: {accept: "application/json"}});
+  const res = await fetch(url, {
+    headers: {accept: "application/json"},
+    // Session state moves on the order of minutes and every observation carries its own
+    // `observedAt`, so a short shared cache is honest rather than a claim about freshness.
+    next: {revalidate: ISSUER_REVALIDATE_S},
+  } as RequestInit);
   if (!res.ok) {
     throw new Error(`xStocks API ${res.status} for ${url}`);
   }
