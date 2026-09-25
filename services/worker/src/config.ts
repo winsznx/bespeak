@@ -58,6 +58,14 @@ export function deployment() {
   return deploymentFromEnv();
 }
 
+/// The three credentials the OnchainOS dev portal issues, plus an optional project id.
+///
+/// The portal's own setup instructions name three variables: key, secret and passphrase.
+/// An earlier build found that OK-ACCESS-PROJECT was required in practice, so it is still
+/// sent when configured — but it is no longer required to start, because refusing to run
+/// over a header the issuing portal does not mention would block a correctly provisioned
+/// key. If the API does want it, the request fails with OKX's own error rather than ours,
+/// which is the more useful message.
 export function okxCredentials() {
   const creds = {
     apiKey: process.env.OKX_API_KEY ?? "",
@@ -65,7 +73,8 @@ export function okxCredentials() {
     passphrase: process.env.OKX_API_PASSPHRASE ?? "",
     projectId: process.env.OKX_PROJECT_ID ?? "",
   };
-  const missing = Object.entries(creds).filter(([, v]) => !v).map(([k]) => k);
+  const required = ["apiKey", "apiSecret", "passphrase"] as const;
+  const missing = required.filter((k) => !creds[k]);
   if (missing.length) {
     throw new Error(
       `OKX credentials missing: ${missing.join(", ")}. ` +

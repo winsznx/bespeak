@@ -234,6 +234,7 @@ export async function assessOrder(
       slippageBps: order.maxSlippageBps,
       caller: d.executionAdapter,
       receiver: order.receiver,
+      builderFee: OkxDexClient.builderFeeFrom(process.env),
     });
     route = validateRoute(swap, chain.dexTokenApproveAddress as Address, {
       receiver: order.receiver,

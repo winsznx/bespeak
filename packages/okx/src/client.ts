@@ -101,7 +101,9 @@ export class OkxDexClient {
       "OK-ACCESS-SIGN": sign,
       "OK-ACCESS-TIMESTAMP": timestamp,
       "OK-ACCESS-PASSPHRASE": this.creds.passphrase,
-      "OK-ACCESS-PROJECT": this.creds.projectId,
+      // Sent only when configured. An empty header is not the same as no header, and some
+      // gateways reject the empty form outright.
+      ...(this.creds.projectId ? {"OK-ACCESS-PROJECT": this.creds.projectId} : {}),
     };
   }
 
@@ -157,6 +159,30 @@ export class OkxDexClient {
   /// `userWalletAddress` is the CALLER, which for Bespeak is the execution adapter, and
   /// `swapReceiverAddress` is the user's own wallet. Splitting them is what lets the
   /// purchased asset land directly with the user instead of being warehoused and forwarded.
+  /// Builder attribution, off unless explicitly configured.
+  ///
+  /// The aggregator supports a referrer fee: `feePercent` with one of
+  /// `fromTokenReferrerWalletAddress` / `toTokenReferrerWalletAddress`. It is the DEX API's
+  /// builder-revenue mechanism, and OKX takes a share of what is charged.
+  ///
+  /// It is deliberately opt-in and unset by default. The fee comes out of the user's swap
+  /// before execution — a 1% fee on a $100 order swaps $99 — so switching it on silently
+  /// would mean the amount a user authorised is not the amount that reaches the market,
+  /// which is the one thing this product promises does not happen. When it is set, the
+  /// deduction has to be shown in the composer before signing and recorded on the receipt.
+  static builderFeeFrom(env: Record<string, string | undefined>): BuilderFee | undefined {
+    const percent = env.OKX_BUILDER_FEE_PERCENT;
+    const receiver = env.OKX_BUILDER_FEE_ADDRESS;
+    if (!percent || !receiver) return undefined;
+    const n = Number(percent);
+    // X Layer is not Solana, so the ceiling is 3%. Reject out-of-range rather than letting
+    // the aggregator reject the whole swap at execution time.
+    if (!Number.isFinite(n) || n <= 0 || n > 3) {
+      throw new Error(`OKX_BUILDER_FEE_PERCENT must be >0 and <=3 on X Layer, got ${percent}`);
+    }
+    return {percent: n, receiver: getAddress(receiver), side: "toToken"};
+  }
+
   async swap(args: {
     fromToken: Address;
     toToken: Address;
@@ -164,7 +190,9 @@ export class OkxDexClient {
     slippageBps: number;
     caller: Address;
     receiver: Address;
+    builderFee?: BuilderFee | undefined;
   }): Promise<SwapResult> {
+    const fee = args.builderFee;
     return this.get<SwapResult>("/api/v6/dex/aggregator/swap", {
       chainIndex: X_LAYER_CHAIN_INDEX,
       amount: args.amount.toString(),
@@ -173,8 +201,25 @@ export class OkxDexClient {
       slippagePercent: (args.slippageBps / 10_000).toString(),
       userWalletAddress: args.caller,
       swapReceiverAddress: args.receiver,
+      // A transaction may take the referrer fee from the input or the output, never both.
+      ...(fee
+        ? {
+            feePercent: String(fee.percent),
+            ...(fee.side === "toToken"
+              ? {toTokenReferrerWalletAddress: fee.receiver}
+              : {fromTokenReferrerWalletAddress: fee.receiver}),
+          }
+        : {}),
     });
   }
+}
+
+export interface BuilderFee {
+  /// Percent, not basis points: the API takes "1.5" to mean 1.5%. Max 3 outside Solana.
+  percent: number;
+  receiver: Address;
+  /// Which side the fee is taken from. Only one is permitted per transaction.
+  side: "fromToken" | "toToken";
 }
 
 /// Validated, normalized view of a route, ready to hand to the contract.
