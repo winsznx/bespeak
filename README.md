@@ -63,13 +63,53 @@ The asset registry is populated on mainnet: 12 of 12 xStocks pushed, each one's
 `symbol()`, `decimals()` and wrapper `asset()` verified on chain before promotion.
 Manifest revision `0xb24cd5d6…2c61368`, on-chain revision `0x5ed61a08…e5fe05dd`.
 
-**What is not yet live.** The router registry is empty and no conditioned fill has run.
-Both depend on OKX DEX API credentials that this build does not have: `routers:push`
-reads the approved router and approve-target from that API, and the keeper builds its
-`routerCalldata` only from `OkxDexClient.swap()`. Without credentials the keeper returns
-`HELD / NO_ROUTE` — a refusal, not a fill — which is the behaviour the design intends
-when no route can be proven. The engine is deployed and the catalogue is real; the
-end-to-end conditioned execution is not claimed.
+The router registry carries both venues, each allowlisted only after being checked rather
+than copied from a page. The OKX router and approve-target are read from the live API,
+because OKX documents that those addresses change. The Uniswap `SwapRouter02` is accepted
+only if `factory()` returns the same v3 factory the pool discovery found by tracing real
+xStock transfer counterparties on chain.
+
+| Venue | Router | Approve target |
+|---|---|---|
+| OKX DEX aggregator | [`0x7c5bEE2a…3060AEaF`](https://www.oklink.com/xlayer/address/0x7c5bEE2a8091C3ef39072f64F18Fac913060AEaF) | [`0x8b773D83…7a64F000`](https://www.oklink.com/xlayer/address/0x8b773D83bc66Be128c60e07E17C8901f7a64F000) |
+| Uniswap v3, single pool | [`0x4f0C28f5…190f9bcA`](https://www.oklink.com/xlayer/address/0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA) | same |
+
+## The canonical run, on mainnet
+
+Three conditioned orders on X Layer, 25 September 2026. Every transaction below was read
+back through RPCs that did not broadcast it (`xlayerrpc.okx.com`, `xlayer.drpc.org`); the
+block, status and gas agree across both.
+
+| What | Route | Transaction | Result |
+|---|---|---|---|
+| $1 NVDAx, next regular session | Uniswap v3 pool | [`0xea4b7183…fb2016`](https://www.oklink.com/xlayer/tx/0xea4b71834b9b5fc30e022281049d9ce82ea3adddcbdcc3ac521fd15064fb2016) | `VERIFIED_FILLED` |
+| $1 NVDAx, immediate | Uniswap v3 pool | [`0x8c07cfb0…5b32427`](https://www.oklink.com/xlayer/tx/0x8c07cfb0776be79a6908c94a76c0c67c766b518d5b6572772b64fec0d5b32427) | `VERIFIED_FILLED`, 11/11 checks |
+| $0.04 NVDAx, immediate | OKX DEX aggregator | [`0x72be50dc…c8f92e07`](https://www.oklink.com/xlayer/tx/0x72be50dc257b24c0fdc06c421f94c20f1cd0d4fa2d2da86147d8ddbdc8f92e07) | `VERIFIED_FILLED`, 11/11 checks |
+
+Both route sources executed for real. The adapter is router-agnostic, so the aggregator and
+the pool are interchangeable behind the same proof: the delivered amount is measured from
+balance deltas, not taken from the router's return value.
+
+### The refusal matters more than the fills
+
+Between the second and third order the US regular session ended. A conditioned order placed
+after that did not execute:
+
+```
+0xb932e492 NVDAx  WAITING  MARKET_CLOSED — issuer period="extended"
+```
+
+Real capital reserved, condition unmet, nothing spent, funds released on cancellation. That
+log is in `evidence/market-closed-refusal.log`. An engine that only ever fills has not shown
+the part that protects the user.
+
+### What a receipt records
+
+Every execution writes a receipt to `evidence/executions/`, carrying the order, the
+condition and its source tier, the venue that priced it, the amounts the chain reported,
+both RPC endpoints, and each verification check with its expected and observed value. The
+amounts come from the contract's own `OrderExecuted` event, and stay null when no such
+event was observed — an unconfirmed execution can never render as a zero-value fill.
 
 ## What is actually true here
 

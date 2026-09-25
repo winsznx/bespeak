@@ -1,0 +1,126 @@
+{
+  "receiptVersion": "1.0",
+  "orderId": "0x302c7b0f8ef7841e63fa083b0cbf6804e4864bcadbfdd3a5ae49a438143c1c9b",
+  "occurrenceIndex": 0,
+  "recurringId": null,
+  "owner": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088",
+  "vault": "0x225885C2eA154Ec53e5E8f768Ad6590Fb9dd13e5",
+  "receiver": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088",
+  "assetId": "0x6977a0680ac0652ec999cfcedf22b8c77022895b68a44c7a0e8854e30cbfdd44",
+  "assetSymbol": "NVDAx",
+  "assetRegistryRevisionAtCreation": "0xb24cd5d689eed6063b5c5339dc6235c69bb0d47fef11e7fea378099ef2c61368",
+  "assetRegistryRevisionAtExecution": "0xb24cd5d689eed6063b5c5339dc6235c69bb0d47fef11e7fea378099ef2c61368",
+  "underlyingAddress": "0xc845b2894dBddd03858fd2D643B4eF725fE0849d",
+  "wrapperAddress": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+  "wrapperVersion": 2,
+  "deliveredInstrument": "wrapped",
+  "inputToken": "0x4ae46a509F6b1D9056937BA4500cb143933D2dc8",
+  "inputTokenSymbol": "USDG",
+  "triggerType": "IMMEDIATE",
+  "conditionIntent": "immediate",
+  "conditionSource": "none (immediate)",
+  "conditionSourceTier": "NONE",
+  "conditionSourceVersion": "v2",
+  "conditionObservationTimestamp": null,
+  "conditionObservationHash": null,
+  "conditionSourcePayloadHash": null,
+  "marketStatus": "n/a",
+  "corporateActionState": "none pending",
+  "amountReserved": "40000",
+  "actualInputSpent": "40000",
+  "unusedInputReleased": "0",
+  "actualOutputReceived": "178247452766875",
+  "minimumOutput": "178234084207917",
+  "quoteSource": "OKX DEX aggregator v6",
+  "quoteTimestamp": "2026-09-25T21:18:28.000Z",
+  "quoteHash": null,
+  "routeSummary": "OKX DEX router 0x7c5bEE2a8091C3ef39072f64F18Fac913060AEaF",
+  "routerAddress": "0x7c5bEE2a8091C3ef39072f64F18Fac913060AEaF",
+  "approvalTarget": "0x8b773D83bc66Be128c60e07E17C8901f7a64F000",
+  "executionPrice": null,
+  "observedDifferenceBps": null,
+  "executionRequestedAt": "2026-09-25T21:18:31.563Z",
+  "transactionSubmittedAt": "2026-09-25T21:18:38.486Z",
+  "transactionHash": "0x72be50dc257b24c0fdc06c421f94c20f1cd0d4fa2d2da86147d8ddbdc8f92e07",
+  "blockNumber": "71602083",
+  "blockHash": "0x09e752f81d6d90883b05ab2a9a30765538bb73d85f1975339dcdf926ad1d75bf",
+  "verificationSource": "https://xlayerrpc.okx.com",
+  "broadcastSource": "https://rpc.xlayer.tech",
+  "firstVerificationAt": "2026-09-25T21:18:42.946Z",
+  "finalVerificationAt": "2026-09-25T21:18:48.568Z",
+  "verificationPolicy": "3 confirmations, independent RPC readback",
+  "confirmations": 5,
+  "verificationChecks": [
+    {
+      "name": "transaction status",
+      "passed": true,
+      "expected": "success",
+      "observed": "success"
+    },
+    {
+      "name": "order terminal state",
+      "passed": true,
+      "expected": "FILLED",
+      "observed": "FILLED"
+    },
+    {
+      "name": "receiver unchanged from intent",
+      "passed": true,
+      "expected": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088",
+      "observed": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088"
+    },
+    {
+      "name": "executed exactly once",
+      "passed": true,
+      "expected": "1",
+      "observed": "1"
+    },
+    {
+      "name": "output asset is the registered asset",
+      "passed": true,
+      "expected": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+      "observed": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5"
+    },
+    {
+      "name": "input actually spent",
+      "passed": true,
+      "expected": "> 0",
+      "observed": "40000"
+    },
+    {
+      "name": "spend within reservation",
+      "passed": true,
+      "expected": "<= 40000",
+      "observed": "40000"
+    },
+    {
+      "name": "output meets the user's minimum",
+      "passed": true,
+      "expected": ">= 0",
+      "observed": "178247452766875"
+    },
+    {
+      "name": "receiver balance increased by the reported output",
+      "passed": true,
+      "expected": ">= 178247452766875",
+      "observed": "178247452766875"
+    },
+    {
+      "name": "vault input decreased by exactly the reported spend",
+      "passed": true,
+      "expected": "40000",
+      "observed": "40000"
+    },
+    {
+      "name": "reservation fully settled",
+      "passed": true,
+      "expected": "closed, 0 remaining",
+      "observed": "active=false remaining=0"
+    }
+  ],
+  "finalOutcomeStatus": "VERIFIED_FILLED",
+  "limitations": [
+    "Market session was established from the xStocks issuer's published trading state and signed by the Bespeak operator. It is operator-attested, not oracle-verified. The signature proves which key asserted this state and when; it does not prove the state itself was correct."
+  ],
+  "receiptId": "0x78e041e7c48abb86543eec793de7608a6f79303e25f1e1293f0bd8c4c7221b8d"
+}
