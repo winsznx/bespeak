@@ -46,6 +46,8 @@ export default async function DashboardPage() {
         underlyingSymbol: a.underlyingSymbol,
         name: a.name.replace(" xStock", ""),
           payWith: a.route?.quoteSymbol ?? null,
+          outputToken: (a.wrapper ?? a.underlying) as `0x${string}`,
+          outputDecimals: a.wrapper ? (a.wrapperDecimals ?? 18) : (a.underlyingDecimals ?? 18),
         }))}
       stables={Object.values(REGISTRY.stables)}
       openNow={openNow}

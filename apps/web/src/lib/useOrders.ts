@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {usePublicClient} from "wagmi";
 import type {Address, Hash} from "viem";
 import {BespeakOrderManagerAbi} from "@bespeak/sdk";
@@ -35,6 +35,10 @@ export function useOrderRecords(owner: Address | undefined) {
   const publicClient = usePublicClient();
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoading, setLoading] = useState(false);
+  // Distinguishes the first load from every refresh after it. Without it the poll below
+  // raised the loading flag every fifteen seconds and the whole list flashed back to
+  // skeletons, on a page the reader was sitting still on and had not asked to change.
+  const loadedOnce = useRef(false);
 
   const load = useCallback(async () => {
     const d = clientDeployment();
@@ -42,7 +46,7 @@ export function useOrderRecords(owner: Address | undefined) {
       setOrders([]);
       return;
     }
-    setLoading(true);
+    if (!loadedOnce.current) setLoading(true);
     try {
       const ids = (await publicClient.readContract({
         address: d.orderManager,
@@ -63,8 +67,12 @@ export function useOrderRecords(owner: Address | undefined) {
         ),
       );
       setOrders(records.reverse());
+      loadedOnce.current = true;
     } catch {
-      setOrders([]);
+      // A failed refresh keeps what is on screen. Clearing the list turned a momentary RPC
+      // hiccup into "you have no orders", which is worse than showing data a few seconds
+      // stale. The first load still falls through to the empty state.
+      if (!loadedOnce.current) setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -72,7 +80,9 @@ export function useOrderRecords(owner: Address | undefined) {
 
   useEffect(() => {
     void load();
-    const t = setInterval(() => void load(), 15_000);
+    // Orders change without the reader doing anything, because the keeper fills them, so
+    // this polls. Thirty seconds rather than fifteen: nothing here is urgent to the second.
+    const t = setInterval(() => void load(), 30_000);
     return () => clearInterval(t);
   }, [load]);
 

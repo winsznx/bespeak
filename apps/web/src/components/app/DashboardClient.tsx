@@ -14,6 +14,7 @@ import {Icon} from "@/components/ui/Icon";
 import {Countdown} from "@/components/Countdown";
 import {ExecutionActivity} from "./ExecutionActivity";
 import {VaultAllocation} from "./VaultAllocation";
+import {Holdings} from "./Holdings";
 
 interface AssetLite {
   assetId: string;
@@ -21,6 +22,10 @@ interface AssetLite {
   underlyingSymbol: string;
   name: string;
   payWith: string | null;
+  /// The token a fill actually delivers: the ERC-4626 wrapper where one exists, otherwise
+  /// the underlying. Holdings are read from this rather than inferred from fill history.
+  outputToken: Address;
+  outputDecimals: number;
 }
 interface Stable {
   address: Address;
@@ -270,6 +275,11 @@ export function DashboardClient({
             </div>
           )}
         </section>
+      </div>
+
+      {/* Holdings sit above the activity row: what you own reads before what you did. */}
+      <div style={{marginBottom: 16}}>
+        <Holdings assets={assets} />
       </div>
 
       {/* ---------------- bottom row ---------------- */}
