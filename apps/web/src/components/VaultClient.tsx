@@ -1,6 +1,7 @@
 "use client";
 
 import {useState} from "react";
+import {keepPreviousData} from "@tanstack/react-query";
 import Link from "next/link";
 import {useAccount, usePublicClient, useReadContract, useWriteContract} from "wagmi";
 import {parseUnits, type Address} from "viem";
@@ -265,7 +266,12 @@ function DepositCard({
     abi: ERC20,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    query: {enabled: Boolean(address), refetchInterval: 10_000},
+    query: {
+      enabled: Boolean(address),
+      refetchInterval: 30_000,
+      placeholderData: keepPreviousData,
+      refetchOnWindowFocus: false,
+    },
   });
   const bal = (walletBalance.data as bigint | undefined) ?? 0n;
 

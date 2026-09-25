@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {observeSessions, type SessionObservation} from "@bespeak/conditions";
 import {MarketStatus} from "@bespeak/shared";
-import {REGISTRY, getDemand, deployment} from "@/lib/server";
+import {REGISTRY, getDemand, deployment, observeSessionsWithin} from "@/lib/server";
 import {nextRegularSessionOpen, formatUtcShort} from "@/lib/format";
 import {AssetIdentity, TokenIdentity} from "@/components/identity";
 import {Countdown} from "@/components/Countdown";
@@ -15,7 +15,7 @@ const STRIP = ["NVDAx", "TSLAx", "SPYx", "AAPLx"];
 export default async function Landing() {
   let sessions = new Map<string, SessionObservation>();
   try {
-    sessions = await observeSessions([...new Set([HERO, ...STRIP])]);
+    sessions = await observeSessionsWithin(observeSessions([...new Set([HERO, ...STRIP])]));
   } catch {
     // An unreachable issuer reads as unknown, which is also the correct execution answer.
   }

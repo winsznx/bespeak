@@ -166,24 +166,29 @@ export async function getAllOrders(): Promise<OrderRecord[]> {
       functionName: "totalOrders",
     })) as bigint;
 
-    const out: OrderRecord[] = [];
-    for (let i = 0n; i < total; i++) {
-      const id = (await client.readContract({
+    // Two batched calls rather than two per order. Sequentially this was 1 + 2N round
+    // trips, so the orders page got slower in proportion to how much anyone had used the
+    // product: nine calls for four orders, two hundred and one for a hundred.
+    const indices = Array.from({length: Number(total)}, (_, i) => BigInt(i));
+    const ids = (await client.multicall({
+      allowFailure: false,
+      contracts: indices.map((i) => ({
         address: d.orderManager,
         abi: BespeakOrderManagerAbi,
         functionName: "orderAt",
         args: [i],
-      })) as Hash;
-      out.push(
-        (await client.readContract({
-          address: d.orderManager,
-          abi: BespeakOrderManagerAbi,
-          functionName: "getOrder",
-          args: [id],
-        })) as unknown as OrderRecord,
-      );
-    }
-    return out;
+      })),
+    })) as unknown as Hash[];
+
+    return (await client.multicall({
+      allowFailure: false,
+      contracts: ids.map((id) => ({
+        address: d.orderManager,
+        abi: BespeakOrderManagerAbi,
+        functionName: "getOrder",
+        args: [id],
+      })),
+    })) as unknown as OrderRecord[];
   } catch {
     return [];
   }
@@ -262,3 +267,27 @@ export async function getDemand() {
 
 export {OrderStatus, TriggerType, reasonFromCode};
 
+
+/// Read market sessions, but never let the read hold a page hostage.
+///
+/// The issuer catalogue is eleven requests on a cold isolate. Awaiting it outright held
+/// every page that shows market state behind its loading fallback for about ten seconds,
+/// so a first visit looked like a product that never finished loading.
+///
+/// A warm catalogue resolves far inside this deadline and nothing changes. A cold one
+/// loses the race and the page renders with the session unknown, which is a state the
+/// product already models honestly and displays as such. Rendering the page without a
+/// marker is a smaller lie than rendering nothing at all.
+export async function observeSessionsWithin<T>(
+  read: Promise<Map<string, T>>,
+  ms = 2_000,
+): Promise<Map<string, T>> {
+  try {
+    return await Promise.race([
+      read,
+      new Promise<Map<string, T>>((resolve) => setTimeout(() => resolve(new Map()), ms)),
+    ]);
+  } catch {
+    return new Map();
+  }
+}

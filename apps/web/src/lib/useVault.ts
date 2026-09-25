@@ -1,6 +1,7 @@
 "use client";
 
 import {useReadContract, useReadContracts} from "wagmi";
+import {keepPreviousData} from "@tanstack/react-query";
 import {formatUnits, type Address} from "viem";
 import {BespeakVaultAbi, BespeakVaultFactoryAbi} from "@bespeak/sdk";
 import {clientDeployment} from "./addresses";
@@ -47,7 +48,20 @@ export function useVault(
           {address: vaultAddress!, abi: BespeakVaultAbi, functionName: "available", args: [stable.address]},
         ]
       : [],
-    query: {enabled: exists, refetchInterval: 10_000},
+    query: {
+      enabled: exists,
+      // Balances change without the user doing anything — the keeper can fill an order
+      // while the page sits open — so they are polled. Thirty seconds rather than ten
+      // because nothing here is time-critical to the second.
+      refetchInterval: 30_000,
+      // Keep showing the last known value while the next read is in flight. Without this
+      // `data` is briefly undefined on every refetch, the figure falls back to a skeleton
+      // and the page visibly blinks every poll and after every transaction.
+      placeholderData: keepPreviousData,
+      // Refetching because someone switched tabs makes the screen change for no reason
+      // the reader can perceive.
+      refetchOnWindowFocus: false,
+    },
   });
 
   const total = exists ? ((balances.data?.[0]?.result as bigint | undefined) ?? null) : exists ? null : 0n;

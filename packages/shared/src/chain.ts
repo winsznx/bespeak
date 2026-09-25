@@ -10,6 +10,13 @@ export const xLayer = defineChain({
   nativeCurrency: {name: "OKB", symbol: "OKB", decimals: 18},
   rpcUrls: {default: {http: ["https://rpc.xlayer.tech"]}},
   blockExplorers: {default: {name: "OKLink", url: "https://www.oklink.com/xlayer"}},
+  // Multicall3 at its canonical cross-chain address, verified on chain here rather than
+  // assumed from the address being standard. Declaring it is what lets viem batch reads
+  // into one request; without it every read is its own round trip, which is both slow for
+  // a page and, for a scheduled worker with a subrequest budget, fatal mid-tick.
+  contracts: {
+    multicall3: {address: "0xcA11bde05977b3631167028862bE2a173976CA11"},
+  },
 });
 
 /// The two RPCs are assigned distinct roles on purpose: the keeper broadcasts through one,

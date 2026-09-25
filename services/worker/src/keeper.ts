@@ -99,23 +99,29 @@ export async function loadActiveOrders(): Promise<OrderView[]> {
     functionName: "totalOrders",
   })) as bigint;
 
-  const out: OrderView[] = [];
-  for (let i = 0n; i < total; i++) {
-    const id = (await client.readContract({
+  // Two batched calls rather than two per order. Sequentially this was 1 + 2N round trips:
+  // nine for four orders, two hundred and one for a hundred, each waiting on the last. That
+  // is the page that took seconds to render and the tick that ran out of subrequests.
+  const indices = Array.from({length: Number(total)}, (_, i) => BigInt(i));
+  const ids = (await client.multicall({
+    allowFailure: false,
+    contracts: indices.map((i) => ({
       address: d.orderManager,
       abi: BespeakOrderManagerAbi,
       functionName: "orderAt",
       args: [i],
-    })) as Hash;
-    const o = (await client.readContract({
+    })),
+  })) as unknown as Hash[];
+
+  return (await client.multicall({
+    allowFailure: false,
+    contracts: ids.map((id) => ({
       address: d.orderManager,
       abi: BespeakOrderManagerAbi,
       functionName: "getOrder",
       args: [id],
-    })) as unknown as OrderView;
-    out.push(o);
-  }
-  return out;
+    })),
+  })) as unknown as OrderView[];
 }
 
 /// Build the signed condition evidence for one order, or null when the trigger needs none.
@@ -374,30 +380,50 @@ export async function registrySymbols(): Promise<{
     functionName: "assetCount",
   })) as bigint;
 
-  const symbolFor = new Map<Hash, string>();
-  const outputTokenFor = new Map<Hash, Address>();
-  for (let i = 0n; i < count; i++) {
-    const id = (await client.readContract({
+  const indices = Array.from({length: Number(count)}, (_, i) => BigInt(i));
+
+  // One batched call per round instead of one network round trip per read. Loading twelve
+  // assets took thirty-seven sequential calls, which on its own exceeded the subrequest
+  // budget a scheduled worker gets — the keeper was being killed mid-tick, after a fill had
+  // landed but before it could verify and publish the receipt.
+  const ids = (await client.multicall({
+    allowFailure: false,
+    contracts: indices.map((i) => ({
       address: d.assetRegistry,
       abi: AssetRegistryAbi,
       functionName: "assetIdAt",
       args: [i],
-    })) as Hash;
-    const asset = (await client.readContract({
-      address: d.assetRegistry,
-      abi: AssetRegistryAbi,
-      functionName: "getAsset",
-      args: [id],
-    })) as unknown as {symbol: string};
-    const out = (await client.readContract({
-      address: d.assetRegistry,
-      abi: AssetRegistryAbi,
-      functionName: "outputToken",
-      args: [id],
-    })) as Address;
-    symbolFor.set(id, asset.symbol);
-    outputTokenFor.set(id, out);
-  }
+    })),
+  })) as Hash[];
+
+  const [assets, outputs] = await Promise.all([
+    client.multicall({
+      allowFailure: false,
+      contracts: ids.map((id) => ({
+        address: d.assetRegistry,
+        abi: AssetRegistryAbi,
+        functionName: "getAsset",
+        args: [id],
+      })),
+    }) as unknown as Promise<Array<{symbol: string}>>,
+    client.multicall({
+      allowFailure: false,
+      contracts: ids.map((id) => ({
+        address: d.assetRegistry,
+        abi: AssetRegistryAbi,
+        functionName: "outputToken",
+        args: [id],
+      })),
+    }) as unknown as Promise<Address[]>,
+  ]);
+
+  const symbolFor = new Map<Hash, string>();
+  const outputTokenFor = new Map<Hash, Address>();
+  ids.forEach((id, i) => {
+    symbolFor.set(id, assets[i]!.symbol);
+    outputTokenFor.set(id, outputs[i]!);
+  });
+
   return {symbolFor, outputTokenFor};
 }
 

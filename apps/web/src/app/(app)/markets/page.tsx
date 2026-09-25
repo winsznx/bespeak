@@ -1,6 +1,6 @@
 import {observeSessions, type SessionObservation} from "@bespeak/conditions";
 import {MarketStatus} from "@bespeak/shared";
-import {REGISTRY} from "@/lib/server";
+import {REGISTRY, observeSessionsWithin} from "@/lib/server";
 import {Suspense} from "react";
 import {MarketsClient} from "@/components/app/MarketsClient";
 import {MarketsSkeleton} from "@/components/app/MarketsSkeleton";
@@ -21,7 +21,7 @@ export default async function MarketsPage() {
   let sessions = new Map<string, SessionObservation>();
   let sourceReachable = true;
   try {
-    sessions = await observeSessions(symbols);
+    sessions = await observeSessionsWithin(observeSessions(symbols));
   } catch {
     sourceReachable = false;
   }
