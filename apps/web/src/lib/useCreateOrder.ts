@@ -1,6 +1,7 @@
 "use client";
 
 import {useState} from "react";
+import {useAfterWrite} from "./useAfterWrite";
 import {useAccount, usePublicClient, useWriteContract} from "wagmi";
 import {type Address, type Hash} from "viem";
 import {BespeakOrderManagerAbi, BespeakVaultFactoryAbi} from "@bespeak/sdk";
@@ -29,6 +30,7 @@ export function useCreateOrder() {
   const {address} = useAccount();
   const publicClient = usePublicClient();
   const {writeContractAsync} = useWriteContract();
+  const afterWrite = useAfterWrite();
   const [isPending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<Hash | null>(null);
@@ -88,6 +90,7 @@ export function useCreateOrder() {
         });
         await publicClient.waitForTransactionReceipt({hash});
         setOrderId(hash);
+        await afterWrite();
       } else {
         const hash = await writeContractAsync({
           address: d.orderManager,
@@ -112,6 +115,7 @@ export function useCreateOrder() {
         });
         await publicClient.waitForTransactionReceipt({hash});
         setOrderId(hash);
+        await afterWrite();
       }
     } catch (e) {
       setError(readableError(e));

@@ -27,5 +27,10 @@
     "typescript": "^5.6.0",
     "tsx": "^4.19.0",
     "@types/node": "^22.0.0"
+  },
+  "exports": {
+    "./run-keeper": "./src/run-keeper.ts",
+    "./keeper": "./src/keeper.ts",
+    "./config": "./src/config.ts"
   }
 }

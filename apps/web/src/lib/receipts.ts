@@ -4,6 +4,32 @@ import {join, dirname} from "node:path";
 import {fileURLToPath} from "node:url";
 import {BUNDLED_RECEIPTS} from "./receipts.generated";
 
+/// Shared receipt store, read through the app's own API route.
+///
+/// The keeper writes receipts to its own disk and this server cannot see that disk, so
+/// without shared storage every fill but the bundled ones rendered as "outcome not yet
+/// confirmed" in production.
+///
+/// The KV binding is reached through /api/receipts rather than directly, because
+/// getCloudflareContext returns no binding from inside this module under the worker
+/// runtime, in either its sync or async form — the same call from a route handler works.
+/// Rather than ship a read that fails silently, the read goes where the binding is
+/// reachable. The cost is one same-origin request on a receipt page that has no local copy.
+async function fromStore(kind: "order" | "receipt", id: string): Promise<StoredReceipt | null> {
+  const base = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!base) return null;
+  try {
+    const res = await fetch(`${base}/api/receipts?${kind}=${encodeURIComponent(id)}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as StoredReceipt;
+  } catch {
+    return null;
+  }
+}
+
 export interface StoredReceipt {
   receiptId: string;
   orderId: string;
@@ -59,7 +85,7 @@ export async function loadReceipt(orderId: string): Promise<StoredReceipt | null
   for (const r of Object.values(BUNDLED_RECEIPTS)) {
     if (r.orderId?.toLowerCase() === orderId.toLowerCase()) return r;
   }
-  return null;
+  return fromStore("order", orderId);
 }
 
 export async function loadReceiptById(receiptId: string): Promise<StoredReceipt | null> {
@@ -71,7 +97,7 @@ export async function loadReceiptById(receiptId: string): Promise<StoredReceipt 
     const raw = await readFile(join(DIR, `${receiptId}.json`), "utf8");
     return JSON.parse(raw) as StoredReceipt;
   } catch {
-    return BUNDLED_RECEIPTS[receiptId] ?? null;
+    return BUNDLED_RECEIPTS[receiptId] ?? (await fromStore("receipt", receiptId));
   }
 }
 

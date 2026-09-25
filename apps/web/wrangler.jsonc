@@ -11,6 +11,15 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  // Receipts are written by the keeper, which does not share a filesystem with this
+  // worker. Without shared storage every fill except the ones bundled at build time
+  // rendered as "outcome not yet confirmed" in production.
+  "kv_namespaces": [
+    {
+      "binding": "RECEIPTS",
+      "id": "484c200eb766414d92ac13644beec33c"
+    }
+  ],
   "observability": {
     "enabled": true
   }

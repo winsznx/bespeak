@@ -261,3 +261,4 @@ export async function getDemand() {
 }
 
 export {OrderStatus, TriggerType, reasonFromCode};
+

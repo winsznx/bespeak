@@ -31,9 +31,17 @@ import {finalizeReceipt, attestedTierLimitations, type BespeakReceipt} from "./r
 
 /// Receipts go to the repo root so the worker that writes them and the web app that serves
 /// them agree on one location, regardless of which directory either was started from.
-const EVIDENCE_DIR =
-  process.env.BESPEAK_EVIDENCE_DIR ??
-  join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "evidence", "executions");
+/// Where the archival receipt copy goes on a server. Resolved lazily because
+/// `import.meta.url` is undefined once this module is bundled into a worker, and computing
+/// it at import time crashed the worker before it could run a single tick.
+function evidenceDir(): string | null {
+  if (process.env.BESPEAK_EVIDENCE_DIR) return process.env.BESPEAK_EVIDENCE_DIR;
+  try {
+    return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "evidence", "executions");
+  } catch {
+    return null;
+  }
+}
 
 /// One keeper pass.
 ///
@@ -170,10 +178,49 @@ async function executeOrder(
     transactionHash: hash,
   });
 
-  mkdirSync(EVIDENCE_DIR, {recursive: true});
-  const path = join(EVIDENCE_DIR, `${receipt.receiptId}.json`);
-  writeFileSync(path, JSON.stringify(receipt, jsonBigint, 2) + "\n");
-  console.log(`      receipt ${path}`);
+  const body = JSON.stringify(receipt, jsonBigint, 2) + "\n";
+
+  // The archival copy. There is no filesystem under the worker runtime, so this is
+  // best-effort: losing it must not cost the receipt, which is published below either way.
+  try {
+    const dir = evidenceDir();
+    if (!dir) throw new Error("no filesystem");
+    mkdirSync(dir, {recursive: true});
+    const path = join(dir, `${receipt.receiptId}.json`);
+    writeFileSync(path, body);
+    console.log(`      receipt ${path}`);
+  } catch {
+    console.log("      no local filesystem; receipt goes to the store only");
+  }
+
+  await publishReceipt(body);
+}
+
+/// Send the receipt to the deployed app.
+///
+/// The file above is the archival copy and lives next to the repo. It is not reachable
+/// from production: the keeper and the web server do not share a filesystem, so without
+/// this every fill rendered as "outcome not yet confirmed" for everyone but us.
+///
+/// A failure here is logged and swallowed. The execution already happened and is already
+/// verified; losing the upload must never turn a good fill into a failed keeper pass.
+async function publishReceipt(body: string): Promise<void> {
+  const url = process.env.RECEIPT_INGEST_URL;
+  const token = process.env.RECEIPT_INGEST_TOKEN;
+  if (!url || !token) return;
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {"content-type": "application/json", authorization: `Bearer ${token}`},
+      body,
+      signal: AbortSignal.timeout(15_000),
+    });
+    console.log(
+      res.ok ? "      published to the app" : `      publish failed: HTTP ${res.status}`,
+    );
+  } catch (e) {
+    console.log(`      publish failed: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 function jsonBigint(_key: string, value: unknown): unknown {

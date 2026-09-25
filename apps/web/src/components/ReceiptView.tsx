@@ -27,15 +27,20 @@ export interface ReceiptViewProps {
 export function ReceiptView(p: ReceiptViewProps) {
   const {receipt} = p;
   const verified = receipt?.finalOutcomeStatus === "VERIFIED_FILLED";
+  // Read back from the chain's own OrderExecuted event when the keeper's receipt file is
+  // not on this server. The purchase did complete, and the amounts are the contract's, so
+  // it reads as complete — but it says which of the two proofs the reader is looking at.
+  const chainConfirmed = receipt?.finalOutcomeStatus === "CHAIN_CONFIRMED";
+  const complete = verified || chainConfirmed;
 
   return (
     <>
       <div className="settle">
         <div className="row g4" style={{marginBottom: 28}}>
-          <Seal verified={verified} />
+          <Seal verified={complete} />
           <div style={{minWidth: 0}}>
             <h1 className="t-h1" style={{fontSize: "clamp(26px,3.2vw,38px)", marginBottom: 6}}>
-              {verified ? "Purchase complete" : "Execution recorded"}
+              {complete ? "Purchase complete" : "Execution recorded"}
             </h1>
             <AssetIdentity
               symbol={p.symbol}
@@ -86,7 +91,14 @@ export function ReceiptView(p: ReceiptViewProps) {
         )}
 
         <div style={{margin: "26px 0"}}>
-          {verified ? (
+          {chainConfirmed ? (
+            <div className="row g2" style={{color: "var(--success)"}}>
+              <Tick />
+              <span className="t-sm">
+                Confirmed from the chain&rsquo;s own execution event
+              </span>
+            </div>
+          ) : verified ? (
             <div className="row g2" style={{color: "var(--success)"}}>
               <Tick />
               <span className="t-body" style={{fontWeight: 500}}>

@@ -6,6 +6,7 @@ import {useAccount, usePublicClient, useReadContract, useWriteContract} from "wa
 import {parseUnits, type Address} from "viem";
 import {BespeakVaultAbi, BespeakVaultFactoryAbi} from "@bespeak/sdk";
 import {OrderStatus} from "@bespeak/shared";
+import {useAfterWrite} from "@/lib/useAfterWrite";
 import {OnChainRef} from "@/components/ui/OnChainRef";
 import {clientDeployment} from "@/lib/addresses";
 import {formatAmount} from "@/lib/format";
@@ -254,6 +255,7 @@ function DepositCard({
   const {address} = useAccount();
   const publicClient = usePublicClient();
   const {writeContractAsync} = useWriteContract();
+  const afterWrite = useAfterWrite();
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -328,6 +330,7 @@ function DepositCard({
       setAmount("");
       onDone();
       void walletBalance.refetch();
+      await afterWrite();
     } catch (e) {
       setErr(e instanceof Error ? (e.message.split("\n")[0] ?? "Deposit failed") : "Deposit failed");
     } finally {

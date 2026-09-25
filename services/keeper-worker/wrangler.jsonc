@@ -1,0 +1,31 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "bespeak-keeper",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  // nodejs_compat covers node:crypto, which the OKX request signing uses, and the node:fs
+  // import in the shared keeper module, whose write is already best-effort.
+  "compatibility_flags": ["nodejs_compat"],
+  // Every minute. A standing order should not wait longer than that once its condition
+  // holds, and an idle tick is two RPC reads.
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  // Public configuration. Addresses and RPCs are not secrets; the private key and the OKX
+  // credentials are set with `wrangler secret put` and never appear in this file.
+  "vars": {
+      "XLAYER_RPC_URL": "https://rpc.xlayer.tech",
+      "XLAYER_VERIFY_RPC_URL": "https://xlayerrpc.okx.com",
+      "KEEPER_LOW_BALANCE_OKB": "0.005",
+      "BESPEAK_ASSET_REGISTRY": "0x462A8DF4b4e09E8A2B346E40A14c5b47c1eA1728",
+      "BESPEAK_ROUTER_REGISTRY": "0xe8909CE9f80264F253aBE8eA50606a04C4a696c0",
+      "BESPEAK_ORDER_MANAGER": "0xE175556a3322A755B14C13403051899b799431d4",
+      "BESPEAK_VAULT_FACTORY": "0xC47315E29b4b8AA5aF26c3603f97bb8341d3766B",
+      "BESPEAK_EXECUTION_ADAPTER": "0x8fe9dB236df3E7F810D2C2eDE908B3B01C166Ca8",
+      "BESPEAK_CONDITION_VERIFIER": "0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6",
+      "RECEIPT_INGEST_URL": "https://bespeak.timjosh507.workers.dev/api/receipts"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
