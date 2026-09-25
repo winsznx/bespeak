@@ -1,4 +1,5 @@
 import type {Metadata} from "next";
+import {OnChainRef} from "@/components/ui/OnChainRef";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {observeSessions, type SessionObservation} from "@bespeak/conditions";
@@ -183,13 +184,19 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
         <summary>Asset details</summary>
         <dl className="kv" style={{paddingBottom: 24}}>
           <dt>xStocks canonical id</dt>
-          <dd className="mono">{asset.canonicalId}</dd>
+          <dd>
+            <OnChainRef value={asset.canonicalId} kind="hash" />
+          </dd>
           <dt>ISIN</dt>
           <dd className="mono">{asset.isin}</dd>
           <dt>Underlying token</dt>
-          <dd className="mono">{asset.underlying}</dd>
+          <dd>
+            <OnChainRef value={asset.underlying} />
+          </dd>
           <dt>Current wrapper (v{asset.wrapperVersion})</dt>
-          <dd className="mono">{asset.wrapper ?? "none published"}</dd>
+          <dd>
+            {asset.wrapper ? <OnChainRef value={asset.wrapper} /> : "none published"}
+          </dd>
           <dt>Executable pair</dt>
           <dd>
             {asset.route
@@ -197,7 +204,9 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
               : "none found"}
           </dd>
           <dt>Pool</dt>
-          <dd className="mono">{asset.route?.pool ?? "n/a"}</dd>
+          <dd>
+            {asset.route?.pool ? <OnChainRef value={asset.route.pool} /> : "n/a"}
+          </dd>
           <dt>You would receive</dt>
           <dd>
             {asset.wrapper
@@ -209,7 +218,9 @@ export default async function AssetPage({params}: {params: Promise<{symbol: stri
             {asset.exchangeMic} · {asset.exchangeTimezone}
           </dd>
           <dt>Registry revision</dt>
-          <dd className="mono">{REGISTRY.sourceRevision}</dd>
+          <dd>
+            <OnChainRef value={REGISTRY.sourceRevision} kind="hash" />
+          </dd>
           <dt>Verification</dt>
           <dd>
             {asset.onchainVerified

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {explorerTx} from "@bespeak/shared";
+import {OnChainRef} from "@/components/ui/OnChainRef";
 import {formatAmount, formatUtc} from "@/lib/format";
 import type {StoredReceipt} from "@/lib/receipts";
 import {AssetIdentity, TokenIdentity} from "./identity";
@@ -129,7 +130,7 @@ export function ReceiptView(p: ReceiptViewProps) {
           <div className="t-label" style={{marginBottom: 6}}>
             Delivered to your wallet
           </div>
-          <div className="mono">{p.receiver}</div>
+          <OnChainRef value={p.receiver} />
         </div>
 
         <div className="row wrap g2">

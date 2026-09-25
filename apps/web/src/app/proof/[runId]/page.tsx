@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {explorerTx} from "@bespeak/shared";
+import {OnChainRef} from "@/components/ui/OnChainRef";
 import {loadReceiptById, listReceipts} from "@/lib/receipts";
 import {REGISTRY} from "@/lib/server";
 import {formatAmount} from "@/lib/format";
@@ -49,7 +50,9 @@ export default async function ProofPage({params}: {params: Promise<{runId: strin
             {formatAmount(BigInt(receipt.amountReserved), stable?.decimals ?? 6)} {stable?.symbol}
           </dd>
           <dt>Receiver</dt>
-          <dd>{String(receipt.receiver)}</dd>
+          <dd>
+            <OnChainRef value={String(receipt.receiver)} />
+          </dd>
         </dl>
       </Numbered>
 
@@ -79,21 +82,25 @@ export default async function ProofPage({params}: {params: Promise<{runId: strin
           <dt>Registry source</dt>
           <dd>{REGISTRY.sourceUri}</dd>
           <dt>Registry revision</dt>
-          <dd>{REGISTRY.sourceRevision}</dd>
+          <dd>
+            <OnChainRef value={REGISTRY.sourceRevision} kind="hash" />
+          </dd>
         </dl>
       </Numbered>
 
       <Numbered n={4} title="Execution on X Layer">
         <dl className="kv">
           <dt>Router</dt>
-          <dd>{receipt.routerAddress ?? "n/a"}</dd>
+          <dd>
+            {receipt.routerAddress ? <OnChainRef value={receipt.routerAddress} /> : "n/a"}
+          </dd>
           <dt>Approval target</dt>
-          <dd>{receipt.approvalTarget ?? "n/a"}</dd>
+          <dd>
+            {receipt.approvalTarget ? <OnChainRef value={receipt.approvalTarget} /> : "n/a"}
+          </dd>
           <dt>Transaction</dt>
           <dd>
-            <a href={explorerTx(receipt.transactionHash)} target="_blank" rel="noreferrer">
-              {receipt.transactionHash}
-            </a>
+            <OnChainRef value={receipt.transactionHash} kind="tx" />
           </dd>
           <dt>Block</dt>
           <dd>{receipt.blockNumber ?? "n/a"}</dd>

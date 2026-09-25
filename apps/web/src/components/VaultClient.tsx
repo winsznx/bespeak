@@ -6,6 +6,7 @@ import {useAccount, usePublicClient, useReadContract, useWriteContract} from "wa
 import {parseUnits, type Address} from "viem";
 import {BespeakVaultAbi, BespeakVaultFactoryAbi} from "@bespeak/sdk";
 import {OrderStatus} from "@bespeak/shared";
+import {OnChainRef} from "@/components/ui/OnChainRef";
 import {clientDeployment} from "@/lib/addresses";
 import {formatAmount} from "@/lib/format";
 import {useVault} from "@/lib/useVault";
@@ -85,7 +86,7 @@ export function VaultClient({stables}: {stables: Stable[]}) {
                     <TokenIdentity symbol={st.symbol} size="sm" />
                     <span className="t-xs faint">{st.decimals} decimals</span>
                   </div>
-                  <div className="mono t-xs faint truncate">{st.address}</div>
+                  <OnChainRef value={st.address} className="t-xs faint" copyable={false} />
                 </div>
               ))}
               <p className="t-xs muted prose" style={{margin: 0}}>
@@ -183,13 +184,13 @@ export function VaultClient({stables}: {stables: Stable[]}) {
               <summary>Vault details</summary>
               <dl className="kv" style={{paddingBottom: 24}}>
                 <dt>Your vault address</dt>
-                <dd className="mono">{vault.address}</dd>
+                <dd><OnChainRef value={vault.address} /></dd>
                 <dt>Status</dt>
                 <dd>{vault.exists ? "deployed" : "not deployed yet — created on first deposit"}</dd>
                 <dt>Owner</dt>
-                <dd className="mono">{address}</dd>
+                <dd>{address ? <OnChainRef value={address} /> : "not connected"}</dd>
                 <dt>Token</dt>
-                <dd className="mono">{stable.address}</dd>
+                <dd><OnChainRef value={stable.address} /></dd>
               </dl>
             </details>
           )}

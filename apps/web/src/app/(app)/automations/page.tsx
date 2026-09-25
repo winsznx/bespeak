@@ -2,6 +2,7 @@ import {headers} from "next/headers";
 import {REGISTRY} from "@/lib/server";
 
 import type {Metadata} from "next";
+import {OnChainRef} from "@/components/ui/OnChainRef";
 
 export const metadata: Metadata = {
   title: "Automations",
@@ -54,7 +55,7 @@ export default async function AutomationsPage() {
       </section>
 
       <section className="module" style={{padding: "4px 24px", marginBottom: 16, overflowX: "auto"}}>
-        <table className="table">
+        <table className="table table-stack">
           <thead>
             <tr>
               <th style={{width: 70}}>Method</th>
@@ -82,7 +83,9 @@ export default async function AutomationsPage() {
         </h2>
         <dl className="kv">
           <dt>Registry revision</dt>
-          <dd className="mono">{REGISTRY.sourceRevision}</dd>
+          <dd>
+            <OnChainRef value={REGISTRY.sourceRevision} kind="hash" />
+          </dd>
           <dt>Supported assets</dt>
           <dd>{REGISTRY.assets.length}</dd>
           <dt>Authentication</dt>

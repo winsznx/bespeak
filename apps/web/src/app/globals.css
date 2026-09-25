@@ -474,6 +474,10 @@ button { font: inherit; }
 /* ---------------- skeletons --------------------------------------------- */
 
 .sk {
+  /* Call sites size skeletons in px to mirror the real content's geometry. On a narrow
+     phone that fixed width is wider than the padded container, so the loading state was
+     the only thing on the page that could force a horizontal scroll. */
+  max-width: 100%;
   border-radius: var(--r-chip);
   background: var(--skeleton);
   background-size: 200% 100%;
@@ -608,15 +612,21 @@ button { font: inherit; }
   display: flex;
   align-items: center;
   gap: var(--s-4);
+  min-width: 0;
   border-bottom: 1px solid var(--line);
 }
+.topbar > * { min-width: 0; }
 
 .searchfield {
   display: flex;
   align-items: center;
   gap: 10px;
   height: 44px;
-  flex: 1;
+  /* `flex: 1` alone keeps the field at its content width, which pushes the wallet and
+     theme controls off the right edge on a narrow phone. The explicit 0 basis plus
+     min-width lets it give way instead. */
+  flex: 1 1 0;
+  min-width: 0;
   max-width: 460px;
   padding: 0 12px;
   border-radius: var(--r-control);
@@ -812,7 +822,12 @@ button { font: inherit; }
   gap: var(--s-6);
   flex-wrap: wrap;
   margin-bottom: var(--s-6);
+  min-width: 0;
 }
+/* A flex child defaults to its content width, so a fixed-width loading skeleton inside the
+   heading block made the block itself wider than the page. min-width lets it yield, which
+   is also what gives the skeleton's own max-width something smaller to resolve against. */
+.page-head > * { min-width: 0; }
 .page-head h1 { margin-bottom: 5px; }
 
 @media (max-width: 767px) {
@@ -887,7 +902,17 @@ button { font: inherit; }
 
 @media (max-width: 860px) {
   .site-nav-links { display: none; }
-  .site-nav-bar { max-width: none; }
+  .site-nav-bar { max-width: none; min-width: 0; }
+  .site-nav-bar > * { min-width: 0; }
+  /* Below the widest phone the bar holds the lockup, the theme toggle and the primary
+     action. The gap is the first thing to give, then the action's padding; the lockup
+     keeps its clear space because shrinking a logo to fit is the wrong trade. */
+  .site-nav-bar { gap: var(--s-3); padding: 0 8px 0 12px; }
+}
+
+@media (max-width: 380px) {
+  .site-nav-bar { gap: 8px; }
+  .site-nav-bar .btn-pill { padding-left: 14px; padding-right: 14px; }
 }
 
 /* ---- hero ---- */
@@ -1395,4 +1420,103 @@ button.searchfield { text-align: left; font: inherit; color: var(--ink-3); }
   :root[data-theme="system"] .blogo img.blogo-micro {
     content: url("/brand/logos/bespeak-micro-white.svg");
   }
+}
+
+/* ---- on-chain references: always linked, never able to widen a container -- */
+/* The value is split into a head that may shrink and clip and a tail that may not, so a
+   66-character hash elides in the middle at any container width with no media query and no
+   duplicated text. `min-width: 0` on every ancestor in the chain is what actually lets the
+   head shrink instead of forcing the row wider — without it flex and grid children default
+   to their content width and the row overflows the card. */
+.ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: bottom;
+}
+
+.ref-link {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+a.ref-link:hover { border-bottom-color: var(--line-2); }
+a.ref-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 3px; }
+.ref-plain { cursor: default; }
+
+.ref-value {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ref-head {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.ref-tail { flex: none; white-space: nowrap; }
+
+.ref-copy {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-chip);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.ref-copy:hover { color: var(--ink-2); background: var(--surface-2); }
+.ref-copy:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+/* Definition rows and table cells are the usual places a long value forces a card wider. */
+.kv dd:has(.ref), .kv dd .ref { min-width: 0; max-width: 100%; }
+
+@media (pointer: coarse) {
+  .ref-copy { width: 32px; height: 32px; }
+}
+
+
+/* ---- stacked table: a 3-column reference does not fit a phone -------------- */
+/* Rather than let the row force the page wider, the header is taken out of view and each
+   row becomes a small block: method and path on one line, description under it. The table
+   stays a real table, so it is unchanged for assistive tech and on desktop. */
+.table td.mono { overflow-wrap: anywhere; min-width: 0; }
+
+@media (max-width: 700px) {
+  .table-stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .table-stack tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 6px 10px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .table-stack tr:last-child { border-bottom: 0; }
+  .table-stack td { border: 0; padding: 0; min-width: 0; }
+  .table-stack td:last-child { grid-column: 1 / -1; }
 }
