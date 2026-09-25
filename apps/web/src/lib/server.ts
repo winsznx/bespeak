@@ -268,19 +268,21 @@ export async function getDemand() {
 export {OrderStatus, TriggerType, reasonFromCode};
 
 
-/// Read market sessions, but never let the read hold a page hostage.
+/// Read market sessions, with an upper bound so a stalled issuer cannot hang a render.
 ///
-/// The issuer catalogue is eleven requests on a cold isolate. Awaiting it outright held
-/// every page that shows market state behind its loading fallback for about ten seconds,
-/// so a first visit looked like a product that never finished loading.
+/// This deadline was two seconds when pages were uncached and every request paid the full
+/// eleven-request catalogue read. That made the dashboard sit on skeletons for ten seconds,
+/// so the read was cut short — and the cut-short result then said every market was
+/// "Unknown", which is the one fact these pages exist to report. Trading a slow truth for a
+/// fast falsehood was the wrong trade.
 ///
-/// A warm catalogue resolves far inside this deadline and nothing changes. A cold one
-/// loses the race and the page renders with the session unknown, which is a state the
-/// product already models honestly and displays as such. Rendering the page without a
-/// marker is a smaller lie than rendering nothing at all.
+/// With pages served from the incremental cache and revalidated in the background, a slow
+/// read is paid once per window by a request that is refreshing a page someone else is
+/// already being served. So the bound is now generous: it exists only so a hung issuer
+/// cannot hold a render open indefinitely, not to routinely cut the read short.
 export async function observeSessionsWithin<T>(
   read: Promise<Map<string, T>>,
-  ms = 2_000,
+  ms = 12_000,
 ): Promise<Map<string, T>> {
   try {
     return await Promise.race([

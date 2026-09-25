@@ -533,7 +533,11 @@ button { font: inherit; }
   background: var(--shell);
   border: 1px solid var(--line);
   border-radius: var(--r-shell);
-  min-height: calc(100dvh - 28px);
+  /* The shell is exactly the viewport, not as tall as its contents. Sized by content, the
+     sidebar grew with the page and scrolled away with it, so on a long list the navigation
+     left the screen. The sidebar and the top bar hold still; the content area is the only
+     thing that scrolls. */
+  height: calc(100dvh - 28px);
   display: grid;
   grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
   overflow: hidden;
@@ -548,6 +552,9 @@ button { font: inherit; }
   flex-direction: column;
   gap: var(--s-6);
   min-height: 0;
+  /* Only scrolls if the navigation itself is taller than the viewport, which it is not at
+     any normal height. It never scrolls because the page is long. */
+  overflow-y: auto;
 }
 
 .side-brand { padding: 0 8px; margin-bottom: var(--s-2); }
@@ -653,8 +660,16 @@ button { font: inherit; }
   font-variant-numeric: normal;
 }
 
-.app-main { display: flex; flex-direction: column; min-width: 0; }
-.app-body { padding: var(--s-8) var(--s-6) var(--s-12); min-width: 0; }
+.app-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+/* The scroll container. `min-height: 0` is what actually lets a flex child shrink below its
+   content and scroll rather than pushing the shell taller. */
+.app-body {
+  padding: var(--s-8) var(--s-6) var(--s-12);
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
 
 /* ---------------- dashboard grid ---------------------------------------- */
 
@@ -729,9 +744,16 @@ button { font: inherit; }
     border: 0;
     border-radius: 0;
     grid-template-columns: minmax(0, 1fr);
+    /* On a phone the page itself scrolls and the top bar is sticky, so the shell grows with
+       its content rather than pinning an inner scroll region. Two nested scrollers on a
+       touch screen is the thing that makes a page feel like it is fighting back. */
+    height: auto;
     min-height: 100dvh;
+    overflow: visible;
     background: var(--shell);
   }
+  .app-main { overflow: visible; }
+  .app-body { overflow: visible; flex: none; }
   .side { display: none; }
   .topbar {
     height: 60px;
