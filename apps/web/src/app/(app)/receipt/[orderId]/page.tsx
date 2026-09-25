@@ -4,6 +4,7 @@ import {getOrder, REGISTRY, deployment, OrderStatus, TriggerType} from "@/lib/se
 import {formatAmount} from "@/lib/format";
 import {loadReceipt} from "@/lib/receipts";
 import {ReceiptView} from "@/components/ReceiptView";
+import {ReceiptFromStore} from "@/components/ReceiptFromStore";
 
 export const dynamic = "force-dynamic";
 
@@ -42,21 +43,30 @@ export default async function ReceiptPage({params}: {params: Promise<{orderId: s
     );
   }
 
+  const viewProps = {
+    symbol: asset?.symbol ?? "",
+    underlyingSymbol: asset?.underlyingSymbol ?? "",
+    assetName: asset?.name.replace(" xStock", "") ?? "",
+    inputSymbol: stable?.symbol ?? "",
+    inputDecimals: stable?.decimals ?? 6,
+    outputSymbol: asset?.wrapper ? `w${asset.symbol}` : (asset?.symbol ?? ""),
+    outputDecimals: asset?.wrapper ? (asset.wrapperDecimals ?? 18) : (asset?.underlyingDecimals ?? 18),
+    receiver: order.receiver,
+    conditionLabel: conditionLabel(order.triggerType),
+  };
+
+  // A receipt the server could not find is looked up from the store in the browser, which
+  // is the only place the binding is reachable. Without this a brand new order always read
+  // as unconfirmed, whatever the chain said.
   return (
     <section style={{maxWidth: 660}}>
-      <ReceiptView
-        receipt={receipt}
-        symbol={asset?.symbol ?? ""}
-        underlyingSymbol={asset?.underlyingSymbol ?? ""}
-        assetName={asset?.name.replace(" xStock", "") ?? ""}
-        inputSymbol={stable?.symbol ?? ""}
-        inputDecimals={stable?.decimals ?? 6}
-        outputSymbol={asset?.wrapper ? `w${asset.symbol}` : (asset?.symbol ?? "")}
-        outputDecimals={asset?.wrapper ? (asset.wrapperDecimals ?? 18) : (asset?.underlyingDecimals ?? 18)}
-        receiver={order.receiver}
-        conditionLabel={conditionLabel(order.triggerType)}
-      />
+      {receipt ? (
+        <ReceiptView receipt={receipt} {...viewProps} />
+      ) : (
+        <ReceiptFromStore orderId={orderId} {...viewProps} />
+      )}
     </section>
+
   );
 }
 

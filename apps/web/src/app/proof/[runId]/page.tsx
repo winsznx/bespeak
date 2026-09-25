@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {notFound} from "next/navigation";
+import {ReceiptFromStore} from "@/components/ReceiptFromStore";
 import {explorerTx} from "@bespeak/shared";
 import {OnChainRef} from "@/components/ui/OnChainRef";
 import {ExternalLink} from "@/components/ui/ExternalLink";
@@ -17,7 +18,27 @@ export const dynamic = "force-dynamic";
 export default async function ProofPage({params}: {params: Promise<{runId: string}>}) {
   const {runId} = await params;
   const receipt = await loadReceiptById(runId);
-  if (!receipt) notFound();
+  // A receipt the server cannot see is not a missing receipt. The store holding it is only
+  // reachable from the browser, so rather than return 404 for a real execution, the page
+  // hands the lookup to the client and renders the receipt it finds.
+  if (!receipt) {
+    return (
+      <section style={{maxWidth: 660}}>
+        <ReceiptFromStore
+          receiptId={runId}
+          symbol=""
+          underlyingSymbol=""
+          assetName=""
+          inputSymbol=""
+          inputDecimals={6}
+          outputSymbol=""
+          outputDecimals={18}
+          receiver={"0x" as `0x${string}`}
+          conditionLabel=""
+        />
+      </section>
+    );
+  }
 
   const asset = REGISTRY.assets.find(
     (a) => a.symbol.toLowerCase() === String(receipt.assetSymbol ?? "").toLowerCase(),
