@@ -43,6 +43,34 @@ to look similar.
 
 ---
 
+## Live on X Layer mainnet
+
+Deployed 25 September 2026 to chain 196, and read back through two RPCs that did not
+broadcast the transactions. Broadcast is not deployment, so the addresses below were
+confirmed by `eth_getCode` on `xlayerrpc.okx.com` and `xlayer.drpc.org`; the bytecode
+hashes agree between them.
+
+| Contract | Address |
+|---|---|
+| AssetRegistry | [`0x462A8DF4b4e09E8A2B346E40A14c5b47c1eA1728`](https://www.oklink.com/xlayer/address/0x462A8DF4b4e09E8A2B346E40A14c5b47c1eA1728) |
+| RouterRegistry | [`0xe8909CE9f80264F253aBE8eA50606a04C4a696c0`](https://www.oklink.com/xlayer/address/0xe8909CE9f80264F253aBE8eA50606a04C4a696c0) |
+| BespeakOrderManager | [`0xE175556a3322A755B14C13403051899b799431d4`](https://www.oklink.com/xlayer/address/0xE175556a3322A755B14C13403051899b799431d4) |
+| BespeakVaultFactory | [`0xC47315E29b4b8AA5aF26c3603f97bb8341d3766B`](https://www.oklink.com/xlayer/address/0xC47315E29b4b8AA5aF26c3603f97bb8341d3766B) |
+| OkxExecutionAdapter | [`0x8fe9dB236df3E7F810D2C2eDE908B3B01C166Ca8`](https://www.oklink.com/xlayer/address/0x8fe9dB236df3E7F810D2C2eDE908B3B01C166Ca8) |
+| AttestedSessionVerifier | [`0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6`](https://www.oklink.com/xlayer/address/0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6) |
+
+The asset registry is populated on mainnet: 12 of 12 xStocks pushed, each one's
+`symbol()`, `decimals()` and wrapper `asset()` verified on chain before promotion.
+Manifest revision `0xb24cd5d6…2c61368`, on-chain revision `0x5ed61a08…e5fe05dd`.
+
+**What is not yet live.** The router registry is empty and no conditioned fill has run.
+Both depend on OKX DEX API credentials that this build does not have: `routers:push`
+reads the approved router and approve-target from that API, and the keeper builds its
+`routerCalldata` only from `OkxDexClient.swap()`. Without credentials the keeper returns
+`HELD / NO_ROUTE` — a refusal, not a fill — which is the behaviour the design intends
+when no route can be proven. The engine is deployed and the catalogue is real; the
+end-to-end conditioned execution is not claimed.
+
 ## What is actually true here
 
 Deadline projects are full of claims that outrun their evidence. These are the ones
