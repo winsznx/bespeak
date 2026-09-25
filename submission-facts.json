@@ -5,17 +5,19 @@
   "chainId": 196,
   "participation": "Remote Build",
   "primaryTrack": "Build a Market",
-  "generatedAt": "2026-09-22T21:23:45.825323Z",
-  "commit": "8fd3dec2cf30f7ebfd8d12994bbbb0ba9a1b4c3f",
-  "_status": "PRE-DEPLOYMENT. Fields that are null are not yet true and must not be quoted as if they were.",
+  "generatedAt": "2026-09-25T23:21:37Z",
+  "commit": "41a4e68",
+  "_status": "deployed to X Layer mainnet; canonical runs executed and independently verified",
   "contracts": {
-    "_status": "not yet deployed to mainnet; deploy verified on an X Layer fork",
-    "assetRegistry": null,
-    "routerRegistry": null,
-    "orderManager": null,
-    "vaultFactory": null,
-    "executionAdapter": null,
-    "conditionVerifier": null
+    "_status": "deployed 2026-09-25 on chain 196; each address confirmed by eth_getCode on two RPCs that did not broadcast the deployment",
+    "assetRegistry": "0x462A8DF4b4e09E8A2B346E40A14c5b47c1eA1728",
+    "routerRegistry": "0xe8909CE9f80264F253aBE8eA50606a04C4a696c0",
+    "orderManager": "0xE175556a3322A755B14C13403051899b799431d4",
+    "vaultFactory": "0xC47315E29b4b8AA5aF26c3603f97bb8341d3766B",
+    "executionAdapter": "0x8fe9dB236df3E7F810D2C2eDE908B3B01C166Ca8",
+    "conditionVerifier": "0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6",
+    "deployer": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088",
+    "deployCostOkb": "0.00015"
   },
   "supportedAssets": [
     {
@@ -147,10 +149,10 @@
   "headlineClaimStatus": "NOT YET PROVEN \u2014 requires the canonical mainnet run",
   "supportingBoundaryClaim": "When the condition, asset state, route, source freshness or user limits were not satisfied, Bespeak preserved the order and the capital instead of executing outside the user's envelope.",
   "supportingBoundaryClaimStatus": "PROVEN in the campaign; see evidence/campaign.json",
-  "canonicalRunId": null,
-  "canonicalReceiptId": null,
-  "liveUrl": null,
-  "proofUrl": null,
+  "canonicalRunId": "0xe6bd259ff38a3604346f2d5089f5950b50117344eed8fdd922657f69a802a64c",
+  "canonicalReceiptId": "0x78e041e7c48abb86543eec793de7608a6f79303e25f1e1293f0bd8c4c7221b8d",
+  "liveUrl": "https://bespeak.timjosh507.workers.dev",
+  "proofUrl": "https://bespeak.timjosh507.workers.dev/proof/0x78e041e7c48abb86543eec793de7608a6f79303e25f1e1293f0bd8c4c7221b8d",
   "repoUrl": null,
   "videoUrl": null,
   "evidence": {
@@ -180,5 +182,62 @@
     "No mainnet execution has occurred yet, so the headline claim is unproven.",
     "No adoption or traction is claimed. Test wallets are not users.",
     "Supported assets are 12 of the issuer's 1026-asset catalogue, restricted to those with a verified deployment."
-  ]
+  ],
+  "routers": {
+    "_status": "both venues allowlisted on chain; neither address was copied from documentation",
+    "okxAggregator": {
+      "router": "0x7c5bEE2a8091C3ef39072f64F18Fac913060AEaF",
+      "approveTarget": "0x8b773D83bc66Be128c60e07E17C8901f7a64F000",
+      "verification": "read from the live OKX DEX v6 API at allowlist time"
+    },
+    "uniswapV3Direct": {
+      "router": "0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
+      "approveTarget": "0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
+      "verification": "accepted only because factory() returns 0x4B2ab38DBF28D31D467aA8993f6c2585981D6804, the same v3 factory found by tracing real xStock transfer counterparties on chain"
+    }
+  },
+  "okxIntegration": {
+    "status": "LIVE",
+    "api": "OKX DEX aggregator v6 on web3.okx.com",
+    "endpointsUsed": [
+      "/api/v6/dex/aggregator/supported/chain",
+      "/api/v6/dex/aggregator/quote",
+      "/api/v6/dex/aggregator/swap"
+    ],
+    "auth": "OK-ACCESS-KEY, OK-ACCESS-SIGN (HMAC-SHA256, base64), OK-ACCESS-TIMESTAMP, OK-ACCESS-PASSPHRASE; OK-ACCESS-PROJECT sent when configured",
+    "credentialsLocation": "server-side environment only; never NEXT_PUBLIC, never in the client bundle, never committed",
+    "proof": "mainnet execution 0x72be50dc257b24c0fdc06c421f94c20f1cd0d4fa2d2da86147d8ddbdc8f92e07 was routed by a live OKX quote and submitted through the OKX router",
+    "fallback": "a direct Uniswap v3 route exists and is used only when the aggregator cannot quote; the venue that priced each fill is recorded on its receipt"
+  },
+  "mainnetExecutions": [
+    {
+      "tx": "0xea4b71834b9b5fc30e022281049d9ce82ea3adddcbdcc3ac521fd15064fb2016",
+      "block": 71597038,
+      "condition": "NEXT_REGULAR_SESSION",
+      "route": "uniswap-v3-direct",
+      "status": "VERIFIED_FILLED"
+    },
+    {
+      "tx": "0x8c07cfb0776be79a6908c94a76c0c67c766b518d5b6572772b64fec0d5b32427",
+      "block": 71600116,
+      "condition": "IMMEDIATE",
+      "route": "uniswap-v3-direct",
+      "status": "VERIFIED_FILLED",
+      "checks": "11/11"
+    },
+    {
+      "tx": "0x72be50dc257b24c0fdc06c421f94c20f1cd0d4fa2d2da86147d8ddbdc8f92e07",
+      "block": 71602083,
+      "condition": "IMMEDIATE",
+      "route": "okx-aggregator",
+      "status": "VERIFIED_FILLED",
+      "checks": "11/11"
+    }
+  ],
+  "refusalEvidence": {
+    "_status": "observed on mainnet, not simulated",
+    "observation": "the US regular session ended between runs; a NEXT_REGULAR_SESSION order then held its reserved capital instead of executing",
+    "reason": "MARKET_CLOSED, issuer period=\"extended\"",
+    "log": "evidence/market-closed-refusal.log"
+  }
 }

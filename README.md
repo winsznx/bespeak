@@ -10,6 +10,47 @@ before calling the order complete.
 
 Built for OKX Dev Day 2026 — Build a Market track, Remote Build, X Layer mainnet (chain 196).
 
+| | |
+|---|---|
+| **Live app** | https://bespeak.timjosh507.workers.dev |
+| **Network** | X Layer mainnet, chain 196 |
+| **Canonical execution** | [`0x72be50dc…c8f92e07`](https://www.oklink.com/xlayer/tx/0x72be50dc257b24c0fdc06c421f94c20f1cd0d4fa2d2da86147d8ddbdc8f92e07) — routed by the live OKX DEX API, `VERIFIED_FILLED`, 11/11 checks |
+| **Its receipt** | [/proof/0x78e041e7…](https://bespeak.timjosh507.workers.dev/proof/0x78e041e7c48abb86543eec793de7608a6f79303e25f1e1293f0bd8c4c7221b8d) |
+| **Order manager** | [`0xE175556a…799431d4`](https://www.oklink.com/xlayer/address/0xE175556a3322A755B14C13403051899b799431d4) |
+| **Vault factory** | [`0xC47315E2…41d3766B`](https://www.oklink.com/xlayer/address/0xC47315E29b4b8AA5aF26c3603f97bb8341d3766B) |
+| **Asset registry** | [`0x462A8DF4…c1eA1728`](https://www.oklink.com/xlayer/address/0x462A8DF4b4e09E8A2B346E40A14c5b47c1eA1728) |
+
+Full address list, including the router registry, execution adapter and condition verifier,
+is under [Live on X Layer mainnet](#live-on-x-layer-mainnet).
+
+### Try it in two minutes
+
+1. Open the app and connect a wallet on X Layer (chain 196).
+2. **Markets** — 12 official xStocks, each verified on chain, with the stablecoin each one
+   is actually executable against.
+3. **NVDA** — the xStock trades on X Layer around the clock; the underlying US session does
+   not. The asset page shows both states separately.
+4. Choose *next regular session*, set an amount, reserve. Capital sits in a vault only you
+   can withdraw from.
+5. **Orders** — a conditioned order that is waiting says why, and when it next becomes
+   eligible. It does not execute early.
+6. **Receipt** — a filled order records what was spent, what arrived, which venue priced
+   it, the condition source and its trust tier, and every verification check with its
+   expected and observed value.
+
+### What is live, and what is not
+
+**Live.** Contracts on mainnet. 12 assets in the on-chain registry. The OKX DEX aggregator
+as the routing venue, authenticated against the live v6 API. Three executions on mainnet,
+each confirmed through an RPC that did not broadcast it. A conditioned order that genuinely
+refused to fill once the session closed.
+
+**Not claimed.** Market session is a *signed market-state attestation* from the issuer's
+published trading state, recorded on every receipt as `ATTESTED_SESSION`. It is not oracle
+verified and the README does not call it trustless. Chainlink Data Streams is not an
+integration here — see [SPONSOR_FINDINGS](docs/SPONSOR_FINDINGS.md). The contracts are not
+externally audited.
+
 ---
 
 ## The problem

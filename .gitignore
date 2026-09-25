@@ -42,3 +42,6 @@ evidence/tmp/
 # opennext / cloudflare build output
 apps/web/.open-next/
 apps/web/.wrangler/
+
+# Another agent's Remotion launch-video project; not part of the product build.
+apps/launch-film/
