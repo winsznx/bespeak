@@ -109,6 +109,9 @@ export interface DirectRoute {
   calldata: Hex;
   expectedOut: bigint;
   minReceive: bigint;
+  /// Measured, not assumed: the order's rate compared against the rate for a token-sized
+  /// probe. The receipt reports this number, so it has to be the real one.
+  priceImpactPercent: number;
   quotedAt: number;
   source: "uniswap-v3-direct";
 }
@@ -170,6 +173,44 @@ export async function buildDirectRoute(
     throw new Error("pool quoted zero output; no usable liquidity at this size");
   }
 
+  // Price impact against a probe 1/1000th the size. A tiny trade approximates the spot
+  // rate, so the gap between the two rates is what this order moves the pool by. If the
+  // probe is too small to quote, impact is reported as 0 only because it is unmeasurable
+  // at that size, which for a trade this small is the honest answer.
+  let priceImpactPercent = 0;
+  const probeIn = req.amount / 1000n;
+  if (probeIn > 0n) {
+    try {
+      const {result: probe} = await client.simulateContract({
+        address: XLAYER_QUOTER_V2,
+        abi: QUOTER_V2,
+        functionName: "quoteExactInputSingle",
+        account: req.caller,
+        args: [
+          {
+            tokenIn: req.fromToken,
+            tokenOut: req.toToken,
+            amountIn: probeIn,
+            fee: req.feeTier,
+            sqrtPriceLimitX96: 0n,
+          },
+        ],
+      });
+      if (probe[0] > 0n) {
+        const SCALE = 1_000_000n;
+        const spotPerIn = (probe[0] * SCALE) / probeIn;
+        const orderPerIn = (expectedOut * SCALE) / req.amount;
+        if (spotPerIn > 0n) {
+          priceImpactPercent =
+            Number(((spotPerIn - orderPerIn) * 1_000_000n) / spotPerIn) / 10_000;
+        }
+      }
+    } catch {
+      // A probe that cannot be quoted tells us nothing; leave the impact at 0 rather than
+      // failing a route that is otherwise fine.
+    }
+  }
+
   const minReceive = (expectedOut * BigInt(10_000 - req.slippageBps)) / 10_000n;
 
   const calldata = encodeFunctionData({
@@ -195,6 +236,7 @@ export async function buildDirectRoute(
     calldata,
     expectedOut,
     minReceive,
+    priceImpactPercent,
     quotedAt: Math.floor(Date.now() / 1000),
     source: "uniswap-v3-direct",
   };

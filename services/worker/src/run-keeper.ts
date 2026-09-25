@@ -20,8 +20,11 @@ import {
   keeperHealth,
   loadActiveOrders,
   registrySymbols,
+  resolveRoute,
   type OrderView,
+  type RouteSource,
 } from "./keeper.js";
+import assetManifest from "@bespeak/assets/manifest" with {type: "json"};
 import {verifyExecution} from "./verifier.js";
 import {finalizeReceipt, attestedTierLimitations, type BespeakReceipt} from "./receipt.js";
 
@@ -96,21 +99,9 @@ async function executeOrder(
     evidence = await signObservation(wallet, account, d.conditionVerifier, order.assetId, obs);
   }
 
-  const okx = new OkxDexClient(okxCredentials());
-  const chain = await okx.supportedChain();
-  const swap = await okx.swap({
-    fromToken: order.inputToken,
-    toToken: outputToken,
-    amount: order.amountIn,
-    slippageBps: order.maxSlippageBps,
-    caller: d.executionAdapter,
-    receiver: order.receiver,
-  });
-  const route = validateRoute(swap, chain.dexTokenApproveAddress as Address, {
-    receiver: order.receiver,
-    maxAmountIn: order.amountIn,
-    minAmountOut: order.minAmountOut,
-  });
+  // Shared with the assessment path, so the keeper submits the route it said it would.
+  const {route, source: routeSource} = await resolveRoute(order, outputToken, symbol);
+  console.log(`      route via ${routeSource}`);
 
   const pre = await capturePreState(order, outputToken);
   const requestedAt = new Date().toISOString();
@@ -166,6 +157,7 @@ async function executeOrder(
     symbol,
     outputToken,
     route,
+    routeSource,
     verification,
     observation,
     requestedAt,
@@ -188,13 +180,15 @@ function buildReceipt(args: {
   symbol: string;
   outputToken: Address;
   route: {router: Address; approveTarget: Address; quotedAt: number; expectedOut: bigint; minReceive: bigint; priceImpactPercent: number};
+  routeSource: RouteSource;
   verification: Awaited<ReturnType<typeof verifyExecution>>;
   observation: Awaited<ReturnType<typeof observeSessions>> extends Map<string, infer T> ? T | null : null;
   requestedAt: string;
   submittedAt: string;
   transactionHash: Hash;
 }): BespeakReceipt {
-  const {order, verification, observation, route} = args;
+  const {order, verification, observation, route, routeSource} = args;
+  const manifestAsset = assetManifest.assets.find((a) => a.symbol === args.symbol);
 
   const draft: Omit<BespeakReceipt, "receiptId"> = {
     receiptVersion: "1.0",
@@ -208,14 +202,24 @@ function buildReceipt(args: {
 
     assetId: order.assetId,
     assetSymbol: args.symbol,
-    assetRegistryRevisionAtCreation: "0x0" as Hash,
-    assetRegistryRevisionAtExecution: "0x0" as Hash,
-    underlyingAddress: args.outputToken,
-    wrapperAddress: null,
-    wrapperVersion: 2,
-    deliveredInstrument: "wrapped",
+    // The pinned manifest revision the identity was resolved against. Placeholders here
+    // would make the receipt unable to answer "which registry said this token was NVDA",
+    // which is the question the whole provenance claim rests on.
+    assetRegistryRevisionAtCreation: assetManifest.sourceRevision as Hash,
+    assetRegistryRevisionAtExecution: assetManifest.sourceRevision as Hash,
+    underlyingAddress: (manifestAsset?.underlying as Address | undefined) ?? args.outputToken,
+    wrapperAddress: (manifestAsset?.wrapper as Address | undefined) ?? null,
+    wrapperVersion: manifestAsset?.wrapperVersion ?? 2,
+    // Derived, not assumed. The adapter delivers whatever the registry names as the output
+    // token, and for these assets that is the ERC-4626 wrapper; saying "wrapped" while
+    // carrying a null wrapper address would be a receipt contradicting itself.
+    deliveredInstrument:
+      manifestAsset?.wrapper &&
+      manifestAsset.wrapper.toLowerCase() === args.outputToken.toLowerCase()
+        ? "wrapped"
+        : "underlying",
     inputToken: order.inputToken,
-    inputTokenSymbol: "",
+    inputTokenSymbol: manifestAsset?.route?.quoteSymbol ?? "",
 
     triggerType: triggerName(order.triggerType),
     conditionIntent:
@@ -236,15 +240,26 @@ function buildReceipt(args: {
     corporateActionState: "none pending",
 
     amountReserved: order.amountIn.toString(),
-    actualInputSpent: "0",
-    unusedInputReleased: "0",
-    actualOutputReceived: "0",
+    // Taken from the verified OrderExecuted event, never from the keeper's own account of
+    // what it did. Null amounts mean nothing was confirmed, so the receipt says 0 spent
+    // rather than implying a fill that was not observed.
+    actualInputSpent: verification.amounts?.actualInputSpent ?? "0",
+    unusedInputReleased: verification.amounts?.unusedInputReleased ?? "0",
+    actualOutputReceived: verification.amounts?.actualOutputReceived ?? "0",
     minimumOutput: route.minReceive.toString(),
 
-    quoteSource: "OKX DEX aggregator v6",
+    // The venue that actually priced this fill. Crediting the aggregator for a route the
+    // pool built would misstate the evidence, and the two do not carry the same guarantees.
+    quoteSource:
+      routeSource === "okx-aggregator"
+        ? "OKX DEX aggregator v6"
+        : "Uniswap v3 pool, quoted on chain via QuoterV2",
     quoteTimestamp: new Date(route.quotedAt * 1000).toISOString(),
     quoteHash: null,
-    routeSummary: `OKX DEX router ${route.router}`,
+    routeSummary:
+      routeSource === "okx-aggregator"
+        ? `OKX DEX router ${route.router}`
+        : `Uniswap v3 SwapRouter02 ${route.router}, single pool`,
     routerAddress: route.router,
     approvalTarget: route.approveTarget,
     executionPrice: null,

@@ -162,6 +162,88 @@ function poolFeeTierFor(symbol: string | undefined): number | undefined {
   return entry?.route?.feeTier;
 }
 
+export type RouteSource = "okx-aggregator" | "uniswap-v3-direct";
+
+export interface ResolvedRoute {
+  route: {
+    router: Address;
+    approveTarget: Address;
+    calldata: `0x${string}`;
+    minReceive: bigint;
+    expectedOut: bigint;
+    priceImpactPercent: number;
+    quotedAt: number;
+  };
+  source: RouteSource;
+}
+
+/// The one place a route is built.
+///
+/// Assessment and execution previously constructed routes separately, which meant a change
+/// to routing had to be made twice and the two could disagree about what would happen. They
+/// now share this, so what the keeper says it will submit is what it submits.
+///
+/// OKX is primary because it aggregates across venues and normally prices better. The
+/// direct pool is the fallback and knows only the pool the registry pinned; it needs no
+/// credentials, which is the difference between a conditioned order executing and the
+/// engine stalling on an API key. If both fail the caller sees why each one did.
+export async function resolveRoute(
+  order: OrderView,
+  outputToken: Address,
+  symbol: string | undefined,
+): Promise<ResolvedRoute> {
+  const client = publicWriteClient();
+  const d = deployment();
+  const errors: string[] = [];
+
+  try {
+    const okx = new OkxDexClient(okxCredentials());
+    const chain = await okx.supportedChain();
+    const swap = await okx.swap({
+      fromToken: order.inputToken,
+      toToken: outputToken,
+      amount: order.amountIn,
+      slippageBps: order.maxSlippageBps,
+      caller: d.executionAdapter,
+      receiver: order.receiver,
+      builderFee: OkxDexClient.builderFeeFrom(process.env),
+    });
+    const route = validateRoute(swap, chain.dexTokenApproveAddress as Address, {
+      receiver: order.receiver,
+      maxAmountIn: order.amountIn,
+      minAmountOut: order.minAmountOut,
+    });
+    return {route, source: "okx-aggregator"};
+  } catch (e) {
+    errors.push(`okx: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  try {
+    const feeTier = poolFeeTierFor(symbol);
+    if (feeTier === undefined) throw new Error("no recorded pool fee tier for this asset");
+    // Fails closed unless the router and quoter belong to the same v3 deployment the pools
+    // were discovered in.
+    await assertVerifiedVenue(client);
+    const direct = await buildDirectRoute(client, {
+      fromToken: order.inputToken,
+      toToken: outputToken,
+      amount: order.amountIn,
+      feeTier,
+      slippageBps: order.maxSlippageBps,
+      receiver: order.receiver,
+      caller: d.executionAdapter,
+    });
+    // The user's floor always governs; the contract enforces it again regardless.
+    const minReceive =
+      direct.minReceive > order.minAmountOut ? direct.minReceive : order.minAmountOut;
+    return {route: {...direct, minReceive}, source: "uniswap-v3-direct"};
+  } catch (e) {
+    errors.push(`direct: ${e instanceof Error ? e.message : String(e)}`);
+  }
+
+  throw new Error(errors.join(" | "));
+}
+
 export async function assessOrder(
   order: OrderView,
   symbolFor: Map<Hash, string>,
@@ -217,65 +299,21 @@ export async function assessOrder(
     return {orderId: order.id, projected: "HELD", reason: "ASSET_NOT_SUPPORTED", detail: "no output token in registry", observation};
   }
 
-  // Two route sources, tried in order. OKX aggregates across venues and normally prices
-  // better, so it stays primary. The direct pool is the fallback: it knows only the single
-  // pool the registry recorded, but it needs no credentials, which is the difference
-  // between a conditioned order executing and the engine stalling on an API key.
   let route;
-  let routeSource: "okx-aggregator" | "uniswap-v3-direct";
-  const routeErrors: string[] = [];
+  let routeSource: RouteSource;
   try {
-    const okx = new OkxDexClient(okxCredentials());
-    const chain = await okx.supportedChain();
-    const swap = await okx.swap({
-      fromToken: order.inputToken,
-      toToken: outputToken,
-      amount: order.amountIn,
-      slippageBps: order.maxSlippageBps,
-      caller: d.executionAdapter,
-      receiver: order.receiver,
-      builderFee: OkxDexClient.builderFeeFrom(process.env),
-    });
-    route = validateRoute(swap, chain.dexTokenApproveAddress as Address, {
-      receiver: order.receiver,
-      maxAmountIn: order.amountIn,
-      minAmountOut: order.minAmountOut,
-    });
-    routeSource = "okx-aggregator";
+    const resolved = await resolveRoute(order, outputToken, symbolFor.get(order.assetId));
+    route = resolved.route;
+    routeSource = resolved.source;
     lastRouteFetch = new Date().toISOString();
   } catch (e) {
-    routeErrors.push(`okx: ${String(e)}`);
-    try {
-      const feeTier = poolFeeTierFor(symbolFor.get(order.assetId));
-      if (feeTier === undefined) throw new Error("no recorded pool fee tier for this asset");
-      // Fails closed unless the router and quoter belong to the same v3 deployment the
-      // pools were discovered in.
-      await assertVerifiedVenue(client);
-      const direct = await buildDirectRoute(client, {
-        fromToken: order.inputToken,
-        toToken: outputToken,
-        amount: order.amountIn,
-        feeTier,
-        slippageBps: order.maxSlippageBps,
-        receiver: order.receiver,
-        caller: d.executionAdapter,
-      });
-      // The user's floor always governs; the contract enforces it again regardless.
-      const minReceive =
-        direct.minReceive > order.minAmountOut ? direct.minReceive : order.minAmountOut;
-      route = {...direct, minReceive};
-      routeSource = "uniswap-v3-direct";
-      lastRouteFetch = new Date().toISOString();
-    } catch (e2) {
-      routeErrors.push(`direct: ${String(e2)}`);
-      return {
-        orderId: order.id,
-        projected: "HELD",
-        reason: "NO_ROUTE",
-        detail: routeErrors.join(" | "),
-        observation,
-      };
-    }
+    return {
+      orderId: order.id,
+      projected: "HELD",
+      reason: "NO_ROUTE",
+      detail: String(e),
+      observation,
+    };
   }
 
   const req = {

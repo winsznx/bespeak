@@ -27,6 +27,14 @@ export interface VerificationResult {
   blockNumber: string | null;
   blockHash: Hash | null;
   checks: VerificationCheck[];
+  /// What the chain says moved, taken from the contract's own OrderExecuted event rather
+  /// than from the keeper's account of what it did. Null when no such event was found, so
+  /// a receipt can never quietly report zero for an execution nobody confirmed.
+  amounts: {
+    actualInputSpent: string;
+    actualOutputReceived: string;
+    unusedInputReleased: string;
+  } | null;
   /// The RPC this verification read through, recorded so the independence of the read path
   /// is part of the evidence rather than a claim about it.
   verificationSource: string;
@@ -79,6 +87,7 @@ export async function verifyExecution(expected: ExpectedOutcome): Promise<Verifi
   const d = deployment();
   const firstAt = new Date().toISOString();
   const checks: VerificationCheck[] = [];
+  let verifiedAmounts: VerificationResult["amounts"] = null;
   const notes: string[] = [];
 
   const receipt = await waitForReceipt(client, expected.transactionHash);
@@ -89,6 +98,7 @@ export async function verifyExecution(expected: ExpectedOutcome): Promise<Verifi
       transactionHash: expected.transactionHash,
       blockNumber: null,
       blockHash: null,
+      amounts: null,
       checks: [check("transaction included", false, "receipt present", "not found in window")],
       verificationSource: verifyRpc(),
       broadcastSource: writeRpc(),
@@ -112,6 +122,7 @@ export async function verifyExecution(expected: ExpectedOutcome): Promise<Verifi
       transactionHash: expected.transactionHash,
       blockNumber: receipt.blockNumber.toString(),
       blockHash: receipt.blockHash,
+      amounts: null,
       checks: [
         ...checks,
         check("block still canonical", false, receipt.blockHash, canonical.hash),
@@ -183,6 +194,12 @@ export async function verifyExecution(expected: ExpectedOutcome): Promise<Verifi
     unusedInputReleased: bigint;
     outputToken: Address;
     receiver: Address;
+  };
+
+  verifiedAmounts = {
+    actualInputSpent: a.actualInputSpent.toString(),
+    actualOutputReceived: a.actualOutputReceived.toString(),
+    unusedInputReleased: a.unusedInputReleased.toString(),
   };
 
   checks.push(
@@ -295,6 +312,7 @@ export async function verifyExecution(expected: ExpectedOutcome): Promise<Verifi
       blockNumber: receipt!.blockNumber.toString(),
       blockHash: receipt!.blockHash,
       checks,
+      amounts: verifiedAmounts,
       verificationSource: verifyRpc(),
       broadcastSource: writeRpc(),
       firstVerificationAt: firstAt,

@@ -9,7 +9,9 @@
     "registry:push": "tsx src/cli-registry.ts",
     "api": "tsx src/api.ts",
     "keeper:dry": "tsx src/run-keeper.ts --dry-run",
-    "routers:push": "tsx src/cli-routers.ts"
+    "routers:push": "tsx src/cli-routers.ts",
+    "order": "tsx src/cli-order.ts",
+    "cancel": "tsx src/cli-cancel.ts"
   },
   "dependencies": {
     "@bespeak/shared": "workspace:*",
