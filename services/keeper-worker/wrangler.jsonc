@@ -5,7 +5,15 @@
   "compatibility_date": "2026-09-01",
   // nodejs_compat covers node:crypto, which the OKX request signing uses, and the node:fs
   // import in the shared keeper module, whose write is already best-effort.
-  "compatibility_flags": ["nodejs_compat"],
+  // nodejs_compat covers node:crypto, used to sign OKX requests, and the node:fs import in
+  // the shared keeper module, whose write is already best-effort.
+  //
+  // global_fetch_strictly_public is what lets this worker reach the app's ingest route.
+  // Without it a fetch to our own workers.dev hostname is resolved inside Cloudflare rather
+  // than over the public internet and comes back 404, so every receipt this keeper produced
+  // was built, verified, and then dropped on the doorstep. The same URL answered 200 from
+  // anywhere else, which is what made it look like a problem with the route.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   // Every minute. A standing order should not wait longer than that once its condition
   // holds, and an idle tick is two RPC reads.
   "triggers": {
@@ -23,7 +31,7 @@
       "BESPEAK_VAULT_FACTORY": "0xC47315E29b4b8AA5aF26c3603f97bb8341d3766B",
       "BESPEAK_EXECUTION_ADAPTER": "0x8fe9dB236df3E7F810D2C2eDE908B3B01C166Ca8",
       "BESPEAK_CONDITION_VERIFIER": "0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6",
-      "BESPEAK_VERIFY_TIMEOUT_MS": "25000",
+      "BESPEAK_VERIFY_TIMEOUT_MS": "45000",
       "RECEIPT_INGEST_URL": "https://bespeak.timjosh507.workers.dev/api/receipts"
   },
   "observability": {

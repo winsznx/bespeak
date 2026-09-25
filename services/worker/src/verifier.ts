@@ -323,16 +323,38 @@ export async function verifyExecution(expected: ExpectedOutcome): Promise<Verifi
   }
 }
 
+/// Wait for inclusion, then for the confirmations the policy asks for.
+///
+/// Waiting only for inclusion meant verification ran the instant the transaction was mined,
+/// at zero or one confirmation, against a policy asking for three. Every postcondition
+/// passed and the outcome still settled as PARTIALLY_VERIFIED, so a completely healthy fill
+/// read on the page as an execution that could not be confirmed. The checks were never the
+/// problem; the receipt was simply being read too early.
+///
+/// Blocks on X Layer arrive every few seconds, so this costs under ten seconds and stays
+/// well inside the verification timeout. Running out of time still returns the receipt:
+/// fewer confirmations than the policy wants is a weaker result that the caller reports
+/// honestly, not a reason to discard a transaction that is on chain.
 async function waitForReceipt(client: PublicClient, hash: Hash) {
   const deadline = Date.now() + POLICY.verificationTimeoutMs;
+  let receipt = null;
+
   while (Date.now() < deadline) {
     try {
-      return await client.getTransactionReceipt({hash});
+      receipt = await client.getTransactionReceipt({hash});
+      break;
     } catch {
       await new Promise((r) => setTimeout(r, 2_000));
     }
   }
-  return null;
+  if (!receipt) return null;
+
+  while (Date.now() < deadline) {
+    const head = await client.getBlockNumber();
+    if (Number(head - receipt.blockNumber) >= POLICY.confirmations) break;
+    await new Promise((r) => setTimeout(r, 2_000));
+  }
+  return receipt;
 }
 
 function statusName(s: number): string {
