@@ -25,7 +25,7 @@ const COLUMNS: Array<{title: string; links: Array<{href: string; label: string; 
       {href: "/terms", label: "Terms"},
       {href: "/privacy", label: "Privacy"},
       {
-        href: "https://github.com",
+        href: "https://github.com/winsznx/bespeak",
         label: "GitHub",
         external: true,
       },

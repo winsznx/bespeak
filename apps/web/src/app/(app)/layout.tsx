@@ -16,9 +16,12 @@ export default function AppLayout({children}: {children: ReactNode}) {
         <Sidebar />
         <div className="app-main">
           <Topbar />
-          <div className="app-body" id="main">
+          {/* A real landmark, and focusable. As a plain div with no tabindex the skip link
+          moved scroll but not focus in Safari and Firefox, so keyboard users landed back
+          at the top of the nav on the next tab. */}
+          <main className="app-body" id="main" tabIndex={-1}>
             {children}
-          </div>
+          </main>
         </div>
       </div>
       <TabBar />

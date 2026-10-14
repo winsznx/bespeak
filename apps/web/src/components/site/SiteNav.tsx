@@ -6,6 +6,7 @@ import {ThemeToggle} from "@/components/app/ThemeToggle";
 
 const LINKS = [
   {href: "/markets", label: "Markets"},
+  {href: "/data", label: "Data"},
   {href: "/#how", label: "How it works"},
   {href: "/demand", label: "Demand"},
   {href: "/automations", label: "Developers"},

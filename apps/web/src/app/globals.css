@@ -74,7 +74,9 @@
 
   --ink: #11171d;           /* brand.json colors.graphite */
   --ink-2: #6f7883;         /* brand.json colors.muted */
-  --ink-3: #9aa0a5;
+  /* 5.16:1 on --surface. The previous #9aa0a5 measured 2.64:1 and carried real text:
+     every table column header, the sample counts on /data and the search placeholder. */
+  --ink-3: #686e74;
 
   --line: #d9dde1;          /* brand.json colors.line */
   --line-2: #c0c7ce;
@@ -126,7 +128,7 @@
 
   --ink: #f4f4f1;
   --ink-2: #92979e;
-  --ink-3: #6b7076;
+  --ink-3: #848a90;
 
   --line: #24282b;
   --line-2: #32373b;
@@ -175,7 +177,7 @@
     --surface-3: #232629;
     --ink: #f4f4f1;
     --ink-2: #92979e;
-    --ink-3: #6b7076;
+    --ink-3: #848a90;
     --line: #24282b;
     --line-2: #32373b;
     --brand: #4a8ef0;
@@ -829,8 +831,10 @@ button { font: inherit; }
   flex: none;
 }
 @media (max-width: 520px) {
-  .network-chip span:not(.dot) { display: none; }
-  .network-chip { padding: 0 8px; }
+  /* Hide the chip, not its contents. Hiding the children left an empty outlined pill in
+     the top bar of every app route on a phone, which read as a rendering fault. The
+     network is stated on the footer and in help, so nothing is lost by dropping it here. */
+  .network-chip { display: none; }
   .wallet-pill .mono { display: none; }
   .wallet-pill { padding: 0 8px; }
 }
@@ -926,6 +930,10 @@ button { font: inherit; }
   .site-nav-links { display: none; }
   .site-nav-bar { max-width: none; min-width: 0; }
   .site-nav-bar > * { min-width: 0; }
+  /* The links carry the auto margins that hold the two ends apart, so hiding them left the
+     action floating 50px short of the right edge with dead space beside it. The last group
+     takes over the push once the links are gone. */
+  .site-nav-bar > :last-child { margin-left: auto; }
   /* Below the widest phone the bar holds the lockup, the theme toggle and the primary
      action. The gap is the first thing to give, then the action's padding; the lockup
      keeps its clear space because shrinking a logo to fit is the wrong trade. */
@@ -962,7 +970,9 @@ button { font: inherit; }
     linear-gradient(196deg, var(--brand-600) 0%, var(--brand-700) 52%, var(--brand-800) 100%);
 }
 .hero-copy { max-width: min(680px, 62%); }
-.hero-lede { max-width: 44ch; color: color-mix(in srgb, #fff 78%, transparent); }
+/* The first sentence on the site. At 78% it measured 3.09:1 against the hero gradient,
+   which fails AA for body text in the one place everyone reads. */
+.hero-lede { max-width: 44ch; color: color-mix(in srgb, #fff 92%, transparent); }
 @media (max-width: 1000px) { .hero-copy { max-width: 100%; } }
 
 .hero-stage {
@@ -1541,4 +1551,70 @@ a.ref-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px;
   .table-stack tr:last-child { border-bottom: 0; }
   .table-stack td { border: 0; padding: 0; min-width: 0; }
   .table-stack td:last-child { grid-column: 1 / -1; }
+}
+
+/* ------------------------------------------------------------------ spread chart
+   One measure across four session states. Single hue at two steps: magnitude is the
+   job, so there is no categorical palette here and nothing is encoded by hue alone.
+   Both steps validated against the light and dark page surfaces; the lighter step
+   sits just under 3:1, which is why every bar carries a visible value. */
+:root {
+  --chart-on: #1f6fe5;
+  --chart-off: #7eaff6;
+}
+:root[data-theme="dark"] {
+  --chart-on: #4a8ef0;
+  --chart-off: #35669f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --chart-on: #4a8ef0;
+    --chart-off: #35669f;
+  }
+}
+
+.sbar { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.sbar-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 190px) minmax(0, 1fr) 86px;
+  align-items: center;
+  gap: var(--s-4);
+  padding: 9px 0;
+}
+.sbar-label {
+  font-size: 13.5px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sbar-n { font-size: 11px; color: var(--ink-3); }
+.sbar-track {
+  height: 22px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 0;
+}
+.sbar-fill {
+  height: 100%;
+  background: var(--chart-off);
+  /* Square at the baseline, rounded at the data end, so the bar reads as a measurement
+     from zero rather than a floating pill. */
+  border-radius: 0 4px 4px 0;
+}
+.sbar-fill-on { background: var(--chart-on); }
+.sbar-value {
+  text-align: right;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.sbar-unit { font-size: 11.5px; font-weight: 500; color: var(--ink-3); }
+
+@media (max-width: 560px) {
+  .sbar-row { grid-template-columns: minmax(0, 1fr) 74px; row-gap: 6px; }
+  .sbar-track { grid-column: 1 / -1; order: 3; }
 }

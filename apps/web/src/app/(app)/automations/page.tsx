@@ -30,6 +30,9 @@ export default async function AutomationsPage() {
     {method: "GET", path: "/api/demand", what: "Committed capital on active WHEN_AVAILABLE orders"},
     {method: "GET", path: "/api/receipts/:id", what: "The canonical machine-readable receipt"},
     {method: "GET", path: "/api/health", what: "Chain, condition source and deployment status"},
+    {method: "GET", path: "/api/basis", what: "Open dataset: measured round-trip cost per asset, by session state"},
+    {method: "GET", path: "/api/basis/:symbol", what: "One asset's cost series, newest first"},
+    {method: "GET", path: "/api/basis.csv", what: "The whole dataset as a file. ?symbol= ?since= ?limit="},
   ];
 
   return (
@@ -40,7 +43,7 @@ export default async function AutomationsPage() {
           <p className="t-sm muted prose" style={{margin: 0, maxWidth: "58ch"}}>
             Bespeak exposes the same product to agents and integrators through a read API.
             Every state change stays a wallet-authorized transaction the caller builds
-            themselves — nothing here signs or takes custody on your behalf.
+            themselves. Nothing here signs or takes custody on your behalf.
           </p>
         </div>
       </div>
@@ -75,6 +78,35 @@ export default async function AutomationsPage() {
             ))}
           </tbody>
         </table>
+      </section>
+
+      <section className="module module-pad" style={{marginBottom: 16}}>
+        <h2 className="t-h3" style={{marginBottom: 10}}>
+          Model Context Protocol
+        </h2>
+        <p className="t-sm muted prose" style={{margin: "0 0 16px", maxWidth: "62ch"}}>
+          The same product as tools an agent can call. Bespeak does something an autonomous
+          agent cannot easily do for itself: hold a funded, bounded instruction somewhere
+          that will act on it while the agent is not running.
+        </p>
+        <dl className="kv">
+          <dt>Endpoint</dt>
+          <dd>
+            <span className="mono">https://bespeak-mcp.timjosh507.workers.dev/mcp</span>
+          </dd>
+          <dt>Transport</dt>
+          <dd>Streamable HTTP, JSON-RPC 2.0, protocol 2025-06-18. No authentication.</dd>
+          <dt>Tools</dt>
+          <dd className="mono t-sm">
+            list_assets, market_state, spread, build_order, order_status, receipt
+          </dd>
+          <dt>Signing</dt>
+          <dd>
+            Stays with the caller. <span className="mono">build_order</span> returns an
+            ordered list of unsigned transactions for your own signer. The server holds no
+            key, takes no custody and cannot move funds, which is why it needs no auth.
+          </dd>
+        </dl>
       </section>
 
       <section className="module module-pad">

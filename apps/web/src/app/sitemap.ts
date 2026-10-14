@@ -13,6 +13,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // The address given to reviewers, and often the first page anyone opens.
     {url: `${SITE_URL}/demo`, lastModified: now, changeFrequency: "monthly", priority: 0.9},
     {url: `${SITE_URL}/markets`, lastModified: now, changeFrequency: "hourly", priority: 0.9},
+    // The open dataset. Public, and the thing most likely to be cited by someone outside
+    // the product.
+    {url: `${SITE_URL}/data`, lastModified: now, changeFrequency: "hourly", priority: 0.9},
     {url: `${SITE_URL}/demand`, lastModified: now, changeFrequency: "daily", priority: 0.6},
     {url: `${SITE_URL}/automations`, lastModified: now, changeFrequency: "monthly", priority: 0.5},
     {url: `${SITE_URL}/help`, lastModified: now, changeFrequency: "monthly", priority: 0.4},

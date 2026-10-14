@@ -15,7 +15,9 @@ const Ctx = createContext<{
 /// The resolved value is written to `data-theme` on <html>, which is the only thing the
 /// token sheet reads — so a theme change never touches layout, only colour.
 export function ThemeProvider({children}: {children: React.ReactNode}) {
-  const [choice, setChoiceState] = useState<ThemeChoice>("light");
+  // Matches the inline bootstrap, which also defaults to "system". A mismatch here would
+  // flip the page on hydration for anyone whose OS asks for dark.
+  const [choice, setChoiceState] = useState<ThemeChoice>("system");
 
   useEffect(() => {
     let saved: string | null = null;
@@ -58,9 +60,13 @@ export const THEME_BOOTSTRAP = `
   var u=new URL(window.location.href), q=u.searchParams.get("theme"), v=null;
   if(q==="light"||q==="dark"||q==="system"){v=q;try{localStorage.setItem("${KEY}",q)}catch(e){}}
   if(!v){try{v=localStorage.getItem("${KEY}")}catch(e){}}
-  if(v!=="light"&&v!=="dark"&&v!=="system")v="light";
+  /* "system", not "light". Defaulting to light wrote data-theme="light" onto the root on
+     a first visit, and the prefers-color-scheme block is guarded by
+     :root:not([data-theme="light"]), so a visitor whose OS asked for dark got light and
+     the dark palette never applied. */
+  if(v!=="light"&&v!=="dark"&&v!=="system")v="system";
   document.documentElement.setAttribute("data-theme",v);
-}catch(e){document.documentElement.setAttribute("data-theme","light")}})();
+}catch(e){document.documentElement.setAttribute("data-theme","system")}})();
 `;
 
 /// The theme actually in effect, resolving `system` against the OS and keeping it live if
