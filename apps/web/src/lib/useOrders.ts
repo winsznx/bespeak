@@ -3,8 +3,8 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import {usePublicClient} from "wagmi";
 import type {Address, Hash} from "viem";
-import {BespeakOrderManagerAbi} from "@bespeak/sdk";
-import {clientDeployment} from "./addresses";
+import {BespeakOrderManagerAbi, BespeakOrderManagerV1Abi} from "@bespeak/sdk";
+import {clientDeployment, legacyDeployment} from "./addresses";
 
 export interface OrderRecord {
   id: Hash;
@@ -24,6 +24,13 @@ export interface OrderRecord {
   recurringId: Hash;
   occurrenceIndex: number;
   status: number;
+  /// v1.1 only. 0 = BUY, 1 = SELL. Filled in as BUY for v1 orders, which is accurate:
+  /// buying is all v1 could do.
+  side?: number;
+  outputToken?: Address;
+  /// Which manager holds this order. Cancelling needs it: a v1 order can only be cancelled
+  /// through the v1 manager.
+  generation?: "v1" | "v1.1";
 }
 
 /// Read a wallet's orders straight from the order manager.
@@ -41,32 +48,58 @@ export function useOrderRecords(owner: Address | undefined) {
   const loadedOnce = useRef(false);
 
   const load = useCallback(async () => {
-    const d = clientDeployment();
-    if (!d || !owner || !publicClient) {
+    const current = clientDeployment();
+    const legacy = legacyDeployment();
+    if (!current || !owner || !publicClient) {
       setOrders([]);
       return;
     }
     if (!loadedOnce.current) setLoading(true);
-    try {
-      const ids = (await publicClient.readContract({
-        address: d.orderManager,
-        abi: BespeakOrderManagerAbi,
-        functionName: "ordersOf",
-        args: [owner],
-      })) as Hash[];
 
-      const records = await Promise.all(
-        ids.map(
-          (id) =>
-            publicClient.readContract({
-              address: d.orderManager,
-              abi: BespeakOrderManagerAbi,
-              functionName: "getOrder",
-              args: [id],
-            }) as Promise<unknown> as Promise<OrderRecord>,
-        ),
+    // Two generations run at once, each with its own ABI. v1.1's Order struct carries two
+    // fields v1 does not return, so one shared ABI would fail to decode every historical
+    // order. Read separately, tagged, then merged newest first.
+    const sources = [
+      {gen: "v1.1" as const, manager: current.orderManager, abi: BespeakOrderManagerAbi},
+      ...(legacy
+        ? [{gen: "v1" as const, manager: legacy.orderManager, abi: BespeakOrderManagerV1Abi}]
+        : []),
+    ];
+
+    try {
+      const perSource = await Promise.all(
+        sources.map(async (src) => {
+          try {
+            const ids = (await publicClient.readContract({
+              address: src.manager,
+              abi: src.abi,
+              functionName: "ordersOf",
+              args: [owner],
+            })) as Hash[];
+
+            const records = await Promise.all(
+              ids.map(
+                (id) =>
+                  publicClient.readContract({
+                    address: src.manager,
+                    abi: src.abi,
+                    functionName: "getOrder",
+                    args: [id],
+                  }) as Promise<unknown> as Promise<OrderRecord>,
+              ),
+            );
+            return records.map((r) => ({...r, side: r.side ?? 0, generation: src.gen}));
+          } catch {
+            // One unreachable generation must not blank the other. A shorter history is a
+            // better outcome than an empty one.
+            return [] as OrderRecord[];
+          }
+        }),
       );
-      setOrders(records.reverse());
+
+      setOrders(
+        perSource.flat().sort((a, b) => Number(b.createdAt) - Number(a.createdAt)),
+      );
       loadedOnce.current = true;
     } catch {
       // A failed refresh keeps what is on screen. Clearing the list turned a momentary RPC

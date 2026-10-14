@@ -30,6 +30,11 @@ export async function GET(_req: Request, ctx: {params: Promise<{wallet: string}>
     source: "on-chain read of BespeakOrderManager",
     orders: orders.map((o) => ({
       orderId: o.id,
+      // Direction and provenance. Without these a consumer cannot tell a sale from a
+      // purchase, or know which manager holds the order it is looking at.
+      side: o.side === 1 ? "SELL" : "BUY",
+      generation: o.generation ?? "v1",
+      outputToken: o.outputToken ?? null,
       status: STATUS[o.status] ?? "UNKNOWN",
       triggerType: TRIGGER[o.triggerType] ?? "UNKNOWN",
       assetId: o.assetId,

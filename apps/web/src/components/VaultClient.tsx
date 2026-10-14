@@ -30,10 +30,15 @@ const ERC20 = [
   {name: "approve", type: "function", stateMutability: "nonpayable", inputs: [{type: "address"}, {type: "uint256"}], outputs: [{type: "bool"}]},
 ] as const;
 
-export function VaultClient({stables}: {stables: Stable[]}) {
+export function VaultClient({stables, assets = []}: {stables: Stable[]; assets?: Stable[]}) {
   const {address, isConnected} = useAccount();
   const [symbol, setSymbol] = useState(stables[0]?.symbol ?? "USDC");
-  const stable = stables.find((s) => s.symbol === symbol) ?? stables[0]!;
+
+  // The vault is multi-token at the contract level and always was, so funding a sell is a
+  // deposit like any other. What was missing was any way to pick an xStock in this screen,
+  // which made the sell side unreachable from the UI even though the chain supported it.
+  const tokens = [...stables, ...assets];
+  const stable = tokens.find((s) => s.symbol === symbol) ?? stables[0]!;
   const vault = useVault(address, stable);
   const {orders} = useOrderRecords(address);
 
@@ -52,7 +57,7 @@ export function VaultClient({stables}: {stables: Stable[]}) {
             from it, up to what that order reserved.
           </p>
         </div>
-        <div className="row g1 page-actions">
+        <div className="row g1 page-actions wrap">
           {stables.map((s) => (
             <button
               key={s.symbol}
@@ -67,6 +72,25 @@ export function VaultClient({stables}: {stables: Stable[]}) {
               <TokenIdentity symbol={s.symbol} size="xs" />
             </button>
           ))}
+          {assets.length > 0 && (
+            // A select rather than twelve more chips. Depositing an xStock is how a sell
+            // gets funded, and it should be reachable without the control row becoming the
+            // page.
+            <select
+              className="select"
+              aria-label="Deposit an xStock to sell"
+              style={{width: "auto", minWidth: 150}}
+              value={assets.some((a) => a.symbol === symbol) ? symbol : ""}
+              onChange={(e) => e.target.value && setSymbol(e.target.value)}
+            >
+              <option value="">xStock to sell…</option>
+              {assets.map((a) => (
+                <option key={a.symbol} value={a.symbol}>
+                  {a.symbol}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 
@@ -92,7 +116,7 @@ export function VaultClient({stables}: {stables: Stable[]}) {
                 </div>
               ))}
               <p className="t-xs muted prose" style={{margin: 0}}>
-                Each asset has its own executable pair — Bespeak uses the one that actually
+                Each asset has its own executable pair. Bespeak uses the one that actually
                 has liquidity rather than assuming a single stablecoin.
               </p>
             </div>

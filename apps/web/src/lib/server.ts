@@ -4,6 +4,7 @@ import {xLayer, DEFAULT_WRITE_RPC, OrderStatus, TriggerType, reasonFromCode} fro
 import {
   AssetRegistryAbi,
   BespeakOrderManagerAbi,
+  BespeakOrderManagerV1Abi,
   BespeakVaultAbi,
   BespeakVaultFactoryAbi,
 } from "@bespeak/sdk";
@@ -86,6 +87,66 @@ export function deployment(): Deployment | null {
   };
 }
 
+/// The v1.1 deployment: same registries, new manager, vault factory and adapter.
+export function deploymentV11(): Pick<Deployment, "orderManager" | "vaultFactory"> | null {
+  const e = process.env;
+  if (!e.BESPEAK_ORDER_MANAGER_V11 || !e.BESPEAK_VAULT_FACTORY_V11) return null;
+  return {
+    orderManager: e.BESPEAK_ORDER_MANAGER_V11 as Address,
+    vaultFactory: e.BESPEAK_VAULT_FACTORY_V11 as Address,
+  };
+}
+
+export type GenerationId = "v1" | "v1.1";
+
+export interface Generation {
+  id: GenerationId;
+  orderManager: Address;
+  vaultFactory: Address;
+  /// Each generation is read with the ABI it was compiled from. v1.1's Order struct carries
+  /// two fields v1 does not return, so decoding a v1 order against the v1.1 ABI fails
+  /// outright. Sharing one ABI between them is the single thing that would silently break
+  /// every history page.
+  abi: typeof BespeakOrderManagerV1Abi | typeof BespeakOrderManagerAbi;
+  /// Whether new orders may be created here. Exactly one generation is current.
+  current: boolean;
+}
+
+/// Every generation the app reads, newest first.
+///
+/// Both are live on chain at once because a vault factory is immutably bound to its manager,
+/// so the sell side could not be an upgrade in place. v1 keeps its vaults and its order
+/// history; dropping it would have deleted the product's own evidence from its interface.
+export function generations(): Generation[] {
+  const v1 = deployment();
+  const v11 = deploymentV11();
+  const out: Generation[] = [];
+  if (v11) {
+    out.push({
+      id: "v1.1",
+      orderManager: v11.orderManager,
+      vaultFactory: v11.vaultFactory,
+      abi: BespeakOrderManagerAbi,
+      current: true,
+    });
+  }
+  if (v1) {
+    out.push({
+      id: "v1",
+      orderManager: v1.orderManager,
+      vaultFactory: v1.vaultFactory,
+      abi: BespeakOrderManagerV1Abi,
+      // v1 is current only when v1.1 is not configured at all.
+      current: !v11,
+    });
+  }
+  return out;
+}
+
+export function currentGeneration(): Generation | null {
+  return generations().find((g) => g.current) ?? null;
+}
+
 export function rpc(): PublicClient {
   return createPublicClient({
     chain: xLayer,
@@ -111,60 +172,91 @@ export interface OrderRecord {
   recurringId: Hash;
   occurrenceIndex: number;
   status: number;
+  /// v1.1 only. 0 = BUY, 1 = SELL. v1 orders are always buys, and are reported as such
+  /// rather than left undefined, so nothing downstream has to special-case a generation.
+  side?: number;
+  /// v1.1 SELL only: the stablecoin the proceeds land in.
+  outputToken?: Address;
+  /// Which deployment this order lives on. Needed to cancel it: a v1 order can only be
+  /// cancelled through the v1 manager.
+  generation?: GenerationId;
 }
 
+/// Normalise a decoded order into the shape the app uses everywhere.
+///
+/// v1 predates `side`, and every v1 order is a buy because that is all v1 could do. Filling
+/// it in here rather than leaving it undefined means no page, chip or filter has to know
+/// which generation it is looking at.
+function normalise(o: OrderRecord, gen: GenerationId): OrderRecord {
+  return {
+    ...o,
+    side: o.side ?? 0,
+    outputToken: o.outputToken ?? ("0x0000000000000000000000000000000000000000" as Address),
+    generation: gen,
+  };
+}
+
+/// Read one order, trying each generation. An id is unique to its manager, so the first
+/// generation that returns it is the one that owns it.
 export async function getOrder(id: Hash): Promise<OrderRecord | null> {
-  const d = deployment();
-  if (!d) return null;
-  try {
-    return (await rpc().readContract({
-      address: d.orderManager,
-      abi: BespeakOrderManagerAbi,
-      functionName: "getOrder",
-      args: [id],
-    })) as unknown as OrderRecord;
-  } catch {
-    return null;
+  const client = rpc();
+  for (const g of generations()) {
+    try {
+      const o = (await client.readContract({
+        address: g.orderManager,
+        abi: g.abi,
+        functionName: "getOrder",
+        args: [id],
+      })) as unknown as OrderRecord;
+      if (o && o.id === id) return normalise(o, g.id);
+    } catch {
+      // `getOrder` reverts with UnknownOrder on the generation that does not hold it, which
+      // is the expected case for every id on all but one manager.
+    }
   }
+  return null;
 }
 
-export async function getOrdersOf(owner: Address): Promise<OrderRecord[]> {
-  const d = deployment();
-  if (!d) return [];
+async function ordersOfGeneration(g: Generation, owner: Address): Promise<OrderRecord[]> {
   const client = rpc();
   try {
     const ids = (await client.readContract({
-      address: d.orderManager,
-      abi: BespeakOrderManagerAbi,
+      address: g.orderManager,
+      abi: g.abi,
       functionName: "ordersOf",
       args: [owner],
     })) as Hash[];
+    if (ids.length === 0) return [];
 
-    return (await Promise.all(
-      ids.map((id) =>
-        client.readContract({
-          address: d.orderManager,
-          abi: BespeakOrderManagerAbi,
-          functionName: "getOrder",
-          args: [id],
-        }) as Promise<unknown> as Promise<OrderRecord>,
-      ),
-    )) as OrderRecord[];
+    const orders = (await client.multicall({
+      allowFailure: false,
+      contracts: ids.map((id) => ({
+        address: g.orderManager,
+        abi: g.abi,
+        functionName: "getOrder",
+        args: [id],
+      })),
+    })) as unknown as OrderRecord[];
+    return orders.map((o) => normalise(o, g.id));
   } catch {
     return [];
   }
 }
 
-export async function getAllOrders(): Promise<OrderRecord[]> {
-  const d = deployment();
-  if (!d) return [];
+export async function getOrdersOf(owner: Address): Promise<OrderRecord[]> {
+  const per = await Promise.all(generations().map((g) => ordersOfGeneration(g, owner)));
+  return per.flat().sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+}
+
+async function allOrdersOfGeneration(g: Generation): Promise<OrderRecord[]> {
   const client = rpc();
   try {
     const total = (await client.readContract({
-      address: d.orderManager,
-      abi: BespeakOrderManagerAbi,
+      address: g.orderManager,
+      abi: g.abi,
       functionName: "totalOrders",
     })) as bigint;
+    if (total === 0n) return [];
 
     // Two batched calls rather than two per order. Sequentially this was 1 + 2N round
     // trips, so the orders page got slower in proportion to how much anyone had used the
@@ -173,25 +265,36 @@ export async function getAllOrders(): Promise<OrderRecord[]> {
     const ids = (await client.multicall({
       allowFailure: false,
       contracts: indices.map((i) => ({
-        address: d.orderManager,
-        abi: BespeakOrderManagerAbi,
+        address: g.orderManager,
+        abi: g.abi,
         functionName: "orderAt",
         args: [i],
       })),
     })) as unknown as Hash[];
 
-    return (await client.multicall({
+    const orders = (await client.multicall({
       allowFailure: false,
       contracts: ids.map((id) => ({
-        address: d.orderManager,
-        abi: BespeakOrderManagerAbi,
+        address: g.orderManager,
+        abi: g.abi,
         functionName: "getOrder",
         args: [id],
       })),
     })) as unknown as OrderRecord[];
+    return orders.map((o) => normalise(o, g.id));
   } catch {
     return [];
   }
+}
+
+/// Every order across every generation, newest first.
+///
+/// Read in parallel and merged. One generation being unreachable must not blank the other:
+/// each reader already fails to an empty list, so a partial outcome is a shorter history
+/// rather than an error page.
+export async function getAllOrders(): Promise<OrderRecord[]> {
+  const per = await Promise.all(generations().map(allOrdersOfGeneration));
+  return per.flat().sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
 }
 
 export interface VaultState {

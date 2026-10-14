@@ -5,13 +5,27 @@ import {useAfterWrite} from "./useAfterWrite";
 import {useAccount, usePublicClient, useWriteContract} from "wagmi";
 import {type Address, type Hash} from "viem";
 import {BespeakOrderManagerAbi, BespeakVaultFactoryAbi} from "@bespeak/sdk";
+
+/// Writes go to the current generation, which is v1.1.
+///
+/// v1.1 is the first manager that can sell, and a vault factory is immutably bound to its
+/// manager, so the sell side could not be an upgrade in place. New orders are created here;
+/// v1 stays running and read-only so its history remains visible. Each generation is read
+/// with its own ABI because v1.1's Order struct carries two fields v1 does not return.
+
 import {TriggerType, SourceTier} from "@bespeak/shared";
 import {clientDeployment} from "./addresses";
 import type {ComposerAsset} from "@/components/OrderComposer";
 
 export interface SubmitArgs {
   asset: ComposerAsset;
-  stable: {address: Address; decimals: number; symbol: string};
+  /// 0 = BUY, 1 = SELL. See OrderSide in @bespeak/shared.
+  side: number;
+  /// The token being spent: the stablecoin on a buy, the xStock itself on a sell.
+  spend: {address: Address; decimals: number; symbol: string};
+  /// Where a sell's proceeds land. Ignored on a buy, where the registry decides the output
+  /// and a caller-supplied value is discarded by the contract.
+  proceeds: Address | null;
   amountRaw: bigint;
   condition: number;
   recurring: {intervalDays: number; occurrences: number} | null;
@@ -74,7 +88,7 @@ export function useCreateOrder() {
           functionName: "createRecurring",
           args: [
             {
-              inputToken: args.stable.address,
+              inputToken: args.spend.address,
               assetId: args.asset.assetId,
               receiver: args.receiver,
               amountPerOccurrence: args.amountRaw,
@@ -98,7 +112,12 @@ export function useCreateOrder() {
           functionName: "createOrder",
           args: [
             {
-              inputToken: args.stable.address,
+              inputToken: args.spend.address,
+              // A buy may not name what it receives: the registry does, and the contract
+              // discards anything passed here. A sell may not name what it sells, only the
+              // stablecoin the proceeds land in.
+              outputToken: args.proceeds ?? "0x0000000000000000000000000000000000000000",
+              side: args.side,
               assetId: args.asset.assetId,
               receiver: args.receiver,
               triggerType: args.condition,

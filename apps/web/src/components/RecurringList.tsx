@@ -3,7 +3,7 @@
 import {useState} from "react";
 import {useAccount, usePublicClient, useWriteContract} from "wagmi";
 import type {Address} from "viem";
-import {BespeakOrderManagerAbi} from "@bespeak/sdk";
+import {BespeakOrderManagerV1Abi} from "@bespeak/sdk";
 import {clientDeployment} from "@/lib/addresses";
 import {formatAmount, formatLocal} from "@/lib/format";
 import {useRecurring, type RecurringRecord} from "@/lib/useRecurring";
@@ -96,7 +96,7 @@ function SeriesCard({
     try {
       const hash = await writeContractAsync({
         address: d.orderManager,
-        abi: BespeakOrderManagerAbi,
+        abi: BespeakOrderManagerV1Abi,
         functionName: fn,
         args: fn === "pauseRecurring" ? [series.id, paused!] : [series.id],
       });

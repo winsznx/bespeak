@@ -44,6 +44,7 @@ export default async function DashboardPage() {
         assetId: a.assetId,
         symbol: a.symbol,
         underlyingSymbol: a.underlyingSymbol,
+        wrapperDecimals: a.wrapperDecimals,
         name: a.name.replace(" xStock", ""),
           payWith: a.route?.quoteSymbol ?? null,
           outputToken: (a.wrapper ?? a.underlying) as `0x${string}`,

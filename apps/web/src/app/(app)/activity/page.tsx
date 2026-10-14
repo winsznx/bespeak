@@ -15,6 +15,7 @@ export default function ActivityPage() {
         assetId: a.assetId,
         symbol: a.symbol,
         underlyingSymbol: a.underlyingSymbol,
+        wrapperDecimals: a.wrapperDecimals,
       }))}
       stables={Object.values(REGISTRY.stables)}
     />

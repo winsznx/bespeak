@@ -21,6 +21,7 @@ export default function OrdersPage() {
         assetId: a.assetId,
         symbol: a.symbol,
         underlyingSymbol: a.underlyingSymbol,
+        wrapperDecimals: a.wrapperDecimals,
         name: a.name.replace(" xStock", ""),
           payWith: a.route?.quoteSymbol ?? null,
         }))}

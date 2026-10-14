@@ -26,6 +26,15 @@
       "id": "484c200eb766414d92ac13644beec33c"
     }
   ],
+  // The open spread dataset, written by the keeper. Read-only from here: nothing in the web
+  // app writes a measurement, so a bug in a page can never corrupt a published series.
+  "d1_databases": [
+    {
+      "binding": "DATA",
+      "database_name": "bespeak-data",
+      "database_id": "3bd0342d-4a34-4571-9929-1194ddea37b8"
+    }
+  ],
   "observability": {
     "enabled": true
   }

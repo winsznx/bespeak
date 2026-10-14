@@ -4,9 +4,9 @@ import {useState} from "react";
 import Link from "next/link";
 import {usePublicClient, useWriteContract} from "wagmi";
 import type {Address} from "viem";
-import {BespeakOrderManagerAbi} from "@bespeak/sdk";
+import {BespeakOrderManagerAbi, BespeakOrderManagerV1Abi} from "@bespeak/sdk";
 import {OrderStatus, TriggerType} from "@bespeak/shared";
-import {clientDeployment} from "@/lib/addresses";
+import {clientDeployment, legacyDeployment} from "@/lib/addresses";
 import {formatAmount, formatUtcShort} from "@/lib/format";
 import type {OrderRecord} from "@/lib/useOrders";
 import type {MarketState} from "@/lib/useMarketState";
@@ -18,6 +18,10 @@ interface AssetLite {
   symbol: string;
   underlyingSymbol: string;
   name: string;
+  /// Needed only to render a sell, whose amount is denominated in the asset rather than in
+  /// a stablecoin. Every xStock wrapper in the registry is 18dp, so that is the fallback,
+  /// but the real value is passed where the caller has it rather than assumed everywhere.
+  wrapperDecimals?: number | null;
 }
 interface Stable {
   address: Address;
@@ -29,7 +33,7 @@ interface Stable {
 /// A standing instruction as an object, with a different composition per state rather than
 /// the same card wearing a different badge.
 ///
-/// Waiting is calm and gives the condition prominence — Bespeak is holding the instruction,
+/// Waiting is calm and gives the condition prominence. Bespeak is holding the instruction,
 /// nothing is broken. Held raises attention without implying failure. Filled is conclusive
 /// and lets the figures dominate. Cancelled and expired recede into history.
 export function OrderCard({
@@ -48,14 +52,28 @@ export function OrderCard({
   onChanged: () => void;
 }) {
   const asset = assets.find((a) => a.assetId.toLowerCase() === order.assetId.toLowerCase());
+  const selling = order.side === 1;
+
+  // What was spent. On a buy that is a stablecoin; on a sell it is the xStock itself, which
+  // is not in `stables` at all. Resolving only against stables left a sell showing no
+  // amount and describing itself as a purchase.
   const stable = stables.find((s) => s.address.toLowerCase() === order.inputToken.toLowerCase());
+  const spentToken = selling
+    ? asset
+      ? {symbol: asset.symbol, decimals: asset.wrapperDecimals ?? 18}
+      : undefined
+    : stable
+      ? {symbol: stable.symbol, decimals: stable.decimals}
+      : undefined;
+  // A sell is denominated in the asset, so a currency prefix would misstate the number.
+  const unitPrefix = selling ? "" : "$";
   const d = clientDeployment();
   const publicClient = usePublicClient();
   const {writeContractAsync} = useWriteContract();
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const amount = stable ? formatAmount(order.amountIn, stable.decimals) : "—";
+  const amount = spentToken ? formatAmount(order.amountIn, spentToken.decimals) : "n/a";
   const symbol = asset?.underlyingSymbol ?? "Asset";
 
   async function cancel() {
@@ -63,9 +81,16 @@ export function OrderCard({
     setBusy(true);
     setErr(null);
     try {
+      // Cancel on the manager that actually holds this order. Sending a v1 order id to the
+      // v1.1 manager reverts with UnknownOrder, so the user's capital would stay reserved
+      // while the interface told them the cancel had failed for no stated reason.
+      const legacy = order.generation === "v1" ? legacyDeployment() : null;
+      const manager = legacy?.orderManager ?? d.orderManager;
+      const abi = legacy ? BespeakOrderManagerV1Abi : BespeakOrderManagerAbi;
+
       const hash = await writeContractAsync({
-        address: d.orderManager,
-        abi: BespeakOrderManagerAbi,
+        address: manager,
+        abi,
         functionName: "cancelOrder",
         args: [order.id],
       });
@@ -90,7 +115,7 @@ export function OrderCard({
             <div className="row g3">
               <Seal />
               <div>
-                <div className="t-h3">{symbol} purchased</div>
+                <div className="t-h3">{symbol} {selling ? "sold" : "purchased"}</div>
                 <div className="t-xs faint">
                   Executed under {conditionPhrase(order.triggerType)}
                 </div>
@@ -99,11 +124,12 @@ export function OrderCard({
             <span className="chip chip-success">Verified</span>
           </div>
           <div className="t-figure" style={{color: "var(--success)"}}>
-            ${amount}
+            {unitPrefix}
+            {amount}
           </div>
           <div className="row g2 t-xs faint" style={{marginTop: 6}}>
             spent from your vault
-            {stable && <TokenIdentity symbol={stable.symbol} size="xs" muted />}
+            {spentToken && <TokenIdentity symbol={spentToken.symbol} size="xs" muted />}
           </div>
         </div>
         <div
@@ -156,9 +182,12 @@ export function OrderCard({
           variant="header"
           sub={conditionPhrase(order.triggerType)}
         />
-        <span className="chip chip-waiting">
-          <span className="dot" />
-          {explain.attention ? "Needs attention" : "Waiting"}
+        <span className="row g2">
+          {selling && <span className="chip chip-outline">Sell</span>}
+          <span className="chip chip-waiting">
+            <span className="dot" />
+            {explain.attention ? "Needs attention" : "Waiting"}
+          </span>
         </span>
       </div>
 
@@ -167,10 +196,13 @@ export function OrderCard({
           <div className="t-label" style={{marginBottom: 6}}>
             Reserved
           </div>
-          <div className="t-figure-sm">${amount}</div>
-          {stable && (
+          <div className="t-figure-sm">
+            {unitPrefix}
+            {amount}
+          </div>
+          {spentToken && (
             <div style={{marginTop: 6}}>
-              <TokenIdentity symbol={stable.symbol} size="xs" muted />
+              <TokenIdentity symbol={spentToken.symbol} size="xs" muted />
             </div>
           )}
         </div>

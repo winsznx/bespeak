@@ -2,11 +2,12 @@
 
 import {useMemo, useState} from "react";
 import {useAccount} from "wagmi";
-import {parseUnits} from "viem";
-import {TriggerType} from "@bespeak/shared";
+import {formatUnits, parseUnits} from "viem";
+import {OrderSide, TriggerType} from "@bespeak/shared";
 import {formatUtcShort, nextRegularSessionOpen} from "@/lib/format";
 import {useVault} from "@/lib/useVault";
 import {useCreateOrder} from "@/lib/useCreateOrder";
+import {sellSupported} from "@/lib/addresses";
 import {Countdown} from "./Countdown";
 
 export interface ComposerAsset {
@@ -28,8 +29,14 @@ interface Stable {
 }
 
 type Condition = "IMMEDIATE" | "NEXT_REGULAR_SESSION" | "WHEN_AVAILABLE" | "RECURRING";
+type Side = "BUY" | "SELL";
 
 const QUICK = [50, 100, 200, 500];
+const FRACTIONS = [
+  {label: "25%", bps: 2_500},
+  {label: "50%", bps: 5_000},
+  {label: "Max", bps: 10_000},
+];
 
 /// The signature Bespeak control.
 ///
@@ -47,6 +54,8 @@ export function OrderComposer({
   sessionOpen: boolean;
 }) {
   const {address, isConnected} = useAccount();
+  const canSell = sellSupported();
+  const [side, setSide] = useState<Side>("BUY");
   const [condition, setCondition] = useState<Condition>(
     sessionOpen ? "IMMEDIATE" : "NEXT_REGULAR_SESSION",
   );
@@ -61,18 +70,27 @@ export function OrderComposer({
   const [advanced, setAdvanced] = useState(false);
 
   const stable = stables.find((s) => s.symbol === stableSymbol) ?? stables[0]!;
-  const vault = useVault(address, stable);
+  const selling = side === "SELL";
+
+  // What the vault has to hold for this order. A buy spends the stablecoin; a sell spends
+  // the xStock itself. Everything downstream, the balance read, the decimals, the amount
+  // parser and the shortfall message, follows this one value rather than branching.
+  const spend = selling
+    ? {address: asset.outputToken, decimals: asset.outputDecimals, symbol: asset.symbol}
+    : stable;
+
+  const vault = useVault(address, spend);
   const create = useCreateOrder();
   const nextOpen = nextRegularSessionOpen();
 
   const amountRaw = useMemo(() => {
     if (!amount) return 0n;
     try {
-      return parseUnits(amount, stable.decimals);
+      return parseUnits(amount, spend.decimals);
     } catch {
       return 0n;
     }
-  }, [amount, stable.decimals]);
+  }, [amount, spend.decimals]);
 
   const hasAmount = amountRaw > 0n;
   const needsTopUp = vault.available !== null && amountRaw > vault.available;
@@ -81,16 +99,25 @@ export function OrderComposer({
   const routeMismatch = Boolean(asset.routeQuoteSymbol && stableSymbol !== asset.routeQuoteSymbol);
 
   const CHOICES: Array<{key: Condition; name: string; what: string}> = [
-    {key: "IMMEDIATE", name: "Now", what: "Buy immediately"},
+    {key: "IMMEDIATE", name: "Now", what: selling ? "Sell immediately" : "Buy immediately"},
     {key: "NEXT_REGULAR_SESSION", name: "Next session", what: "Wait for the underlying market"},
-    {key: "WHEN_AVAILABLE", name: "When available", what: "Reserve until it reaches X Layer"},
-    {key: "RECURRING", name: "Repeat", what: "Make it a standing instruction"},
+    ...(selling
+      ? []
+      : ([
+          {key: "WHEN_AVAILABLE", name: "When available", what: "Reserve until it reaches X Layer"},
+          // Recurring is BUY only in the contract. A scheduled exit has to reason about how
+          // much of a position is left, which is a different instrument and is not built, so
+          // the option is absent rather than present and broken.
+          {key: "RECURRING", name: "Repeat", what: "Make it a standing instruction"},
+        ] as const)),
   ];
 
   function submit() {
     create.submit({
       asset,
-      stable,
+      side: selling ? OrderSide.SELL : OrderSide.BUY,
+      spend,
+      proceeds: selling ? stable.address : null,
       amountRaw,
       condition:
         condition === "IMMEDIATE"
@@ -114,15 +141,50 @@ export function OrderComposer({
         : create.isPending
           ? "Confirm in your wallet…"
           : condition === "IMMEDIATE"
-            ? "Review and buy"
+            ? (selling ? "Review and sell" : "Review and buy")
             : "Confirm and reserve";
 
   return (
     <div className="composer-grid">
       <div>
+        {/* ---------- side ---------- */}
+        {canSell && (
+          <div
+            className="conditions"
+            role="group"
+            aria-label="Direction"
+            style={{gridTemplateColumns: "repeat(2, minmax(0, 1fr))", marginBottom: 18}}
+          >
+            {(["BUY", "SELL"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                className="condition"
+                aria-pressed={side === k}
+                onClick={() => {
+                  setSide(k);
+                  setAmount("");
+                  // Repeat and When available do not exist on a sell, so a stale selection
+                  // would leave the form on a condition that is no longer on screen.
+                  if (k === "SELL" && (condition === "RECURRING" || condition === "WHEN_AVAILABLE")) {
+                    setCondition(sessionOpen ? "IMMEDIATE" : "NEXT_REGULAR_SESSION");
+                  }
+                }}
+              >
+                <span className="condition-name">{k === "BUY" ? "Buy" : "Sell"}</span>
+                <span className="condition-what">
+                  {k === "BUY"
+                    ? `Spend ${stable.symbol}`
+                    : `Sell ${asset.underlyingSymbol} for ${stable.symbol}`}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ---------- when ---------- */}
         <h2 className="t-h2" style={{marginBottom: 18}}>
-          When should Bespeak buy?
+          When should Bespeak {selling ? "sell" : "buy"}?
         </h2>
 
         <div className="conditions" role="group" aria-label="Execution condition">
@@ -144,7 +206,10 @@ export function OrderComposer({
           {condition === "IMMEDIATE" && (
             <>
               <DetailRow label="X Layer market" value="Available now" tone="var(--success)" />
-              <DetailRow label="Expected payment asset" value={stable.symbol} />
+              <DetailRow
+                label={selling ? "Proceeds asset" : "Expected payment asset"}
+                value={stable.symbol}
+              />
               <p className="t-sm muted prose" style={{margin: "12px 0 0"}}>
                 Executes on the next keeper pass, inside the limits you set below.
               </p>
@@ -163,7 +228,10 @@ export function OrderComposer({
                 value={formatUtcShort(nextOpen)}
                 extra={<Countdown to={nextOpen.toISOString()} />}
               />
-              <DetailRow label="Expected payment asset" value={stable.symbol} />
+              <DetailRow
+                label={selling ? "Proceeds asset" : "Expected payment asset"}
+                value={stable.symbol}
+              />
               {!sessionOpen && (
                 <p className="t-sm muted prose" style={{margin: "12px 0 0"}}>
                   Your funds stay reserved and withdrawable by cancelling at any point before
@@ -176,7 +244,10 @@ export function OrderComposer({
           {condition === "WHEN_AVAILABLE" && (
             <>
               <DetailRow label="Status" value="Waiting for X Layer availability" />
-              <DetailRow label="Expected payment asset" value={stable.symbol} />
+              <DetailRow
+                label={selling ? "Proceeds asset" : "Expected payment asset"}
+                value={stable.symbol}
+              />
               <p className="t-sm muted prose" style={{margin: "12px 0 0"}}>
                 Funds stay reserved until the asset is tradable here or your deadline passes —
                 whichever comes first. Nothing is spent meanwhile.
@@ -228,10 +299,14 @@ export function OrderComposer({
         {/* ---------- amount ---------- */}
         <div style={{marginTop: 28}}>
           <label className="field-label" htmlFor="amount">
-            Amount to spend{condition === "RECURRING" ? " each time" : ""}
+            {selling
+              ? `Amount of ${asset.underlyingSymbol} to sell`
+              : `Amount to spend${condition === "RECURRING" ? " each time" : ""}`}
           </label>
           <div className="amount-field">
-            <span className="prefix">$</span>
+            {/* A sell is denominated in the asset, not in dollars, so the currency prefix
+                would be a lie about what the number means. */}
+            {!selling && <span className="prefix">$</span>}
             <input
               id="amount"
               inputMode="decimal"
@@ -240,7 +315,9 @@ export function OrderComposer({
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
             />
-            {stables.length > 1 ? (
+            {selling ? (
+              <span className="suffix">{asset.symbol}</span>
+            ) : stables.length > 1 ? (
               <select
                 className="suffix"
                 aria-label="Payment asset"
@@ -259,21 +336,39 @@ export function OrderComposer({
           </div>
 
           <div className="row wrap g2" style={{marginTop: 12}}>
-            {QUICK.map((v) => (
-              <button
-                key={v}
-                type="button"
-                className="btn btn-sm"
-                onClick={() => setAmount(String(v))}
-                style={
-                  amount === String(v)
-                    ? {borderColor: "var(--brand)", color: "var(--brand)"}
-                    : undefined
-                }
-              >
-                ${v}
-              </button>
-            ))}
+            {/* Fixed dollar amounts make no sense for a sell, where the unit is the asset
+                and the sensible shortcut is a fraction of what the vault actually holds. */}
+            {selling
+              ? FRACTIONS.map((f) => (
+                  <button
+                    key={f.label}
+                    type="button"
+                    className="btn btn-sm"
+                    disabled={!vault.available || vault.available === 0n}
+                    onClick={() => {
+                      const have = vault.available ?? 0n;
+                      if (have === 0n) return;
+                      setAmount(formatUnits((have * BigInt(f.bps)) / 10_000n, spend.decimals));
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                ))
+              : QUICK.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={() => setAmount(String(v))}
+                    style={
+                      amount === String(v)
+                        ? {borderColor: "var(--brand)", color: "var(--brand)"}
+                        : undefined
+                    }
+                  >
+                    ${v}
+                  </button>
+                ))}
           </div>
 
           {routeMismatch && (

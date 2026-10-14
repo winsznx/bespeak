@@ -3,7 +3,7 @@
 import {useCallback, useEffect, useState} from "react";
 import {usePublicClient} from "wagmi";
 import type {Address, Hash} from "viem";
-import {BespeakOrderManagerAbi} from "@bespeak/sdk";
+import {BespeakOrderManagerV1Abi} from "@bespeak/sdk";
 import {clientDeployment} from "./addresses";
 
 export interface RecurringRecord {
@@ -44,7 +44,7 @@ export function useRecurring(owner: Address | undefined) {
     try {
       const ids = (await publicClient.readContract({
         address: d.orderManager,
-        abi: BespeakOrderManagerAbi,
+        abi: BespeakOrderManagerV1Abi,
         functionName: "recurringOf",
         args: [owner],
       })) as Hash[];
@@ -54,7 +54,7 @@ export function useRecurring(owner: Address | undefined) {
           (id) =>
             publicClient.readContract({
               address: d.orderManager,
-              abi: BespeakOrderManagerAbi,
+              abi: BespeakOrderManagerV1Abi,
               functionName: "getRecurring",
               args: [id],
             }) as Promise<unknown> as Promise<RecurringRecord>,
