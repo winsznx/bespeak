@@ -1,6 +1,6 @@
 import {formatEther, type Address, type Hash} from "viem";
 import {BespeakOrderManagerAbi, BespeakVaultAbi, AssetRegistryAbi} from "@bespeak/sdk";
-import {reasonFromCode, TriggerType, MarketStatus, type Reason} from "@bespeak/shared";
+import {reasonFromCode, OrderSide, TriggerType, MarketStatus, type Reason} from "@bespeak/shared";
 import {observeSessions, signObservation, type SessionObservation} from "@bespeak/conditions";
 import {
   OkxDexClient,
@@ -57,11 +57,35 @@ export async function keeperHealth(): Promise<KeeperHealth> {
   };
 }
 
+/// The token an execution must deliver, resolved exactly as the contract resolves it.
+///
+/// Shared by assessment and execution on purpose. These were two separate expressions, and
+/// the execution one kept taking the registry's answer after the assessment one learned
+/// about direction. The result was a sell that passed every eligibility check and then
+/// asked the aggregator to swap TSLAx into TSLAx, which fails with an error about token
+/// addresses that says nothing about the actual mistake. One function, two callers.
+export function deliveredTokenFor(
+  order: OrderView,
+  registryOutputs: Map<Hash, Address>,
+): Address | undefined {
+  if (order.side === OrderSide.SELL) {
+    return order.outputToken === "0x0000000000000000000000000000000000000000"
+      ? undefined
+      : order.outputToken;
+  }
+  return registryOutputs.get(order.assetId);
+}
+
 export interface OrderView {
   id: Hash;
   owner: Address;
   vault: Address;
   inputToken: Address;
+  /// v1.1. Set only on a SELL, where it is the stablecoin the proceeds land in. Zero on a
+  /// BUY, whose output the registry decides.
+  outputToken: Address;
+  /// v1.1. 0 = BUY, 1 = SELL.
+  side: number;
   assetId: Hash;
   receiver: Address;
   triggerType: number;
@@ -300,9 +324,18 @@ export async function assessOrder(
     };
   }
 
-  const outputToken = outputTokenFor.get(order.assetId);
+  const outputToken = deliveredTokenFor(order, outputTokenFor);
   if (!outputToken) {
-    return {orderId: order.id, projected: "HELD", reason: "ASSET_NOT_SUPPORTED", detail: "no output token in registry", observation};
+    return {
+      orderId: order.id,
+      projected: "HELD",
+      reason: "ASSET_NOT_SUPPORTED",
+      detail:
+        order.side === OrderSide.SELL
+          ? "sell order carries no proceeds token"
+          : "no output token in registry",
+      observation,
+    };
   }
 
   let route;

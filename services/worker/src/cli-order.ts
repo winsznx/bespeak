@@ -1,6 +1,6 @@
 import {parseUnits, getAddress, erc20Abi, type Address, type Hash} from "viem";
 import {BespeakOrderManagerAbi, BespeakVaultFactoryAbi, BespeakVaultAbi} from "@bespeak/sdk";
-import {xLayer, SourceTier, TriggerType} from "@bespeak/shared";
+import {xLayer, OrderSide, SourceTier, TriggerType} from "@bespeak/shared";
 import assetManifest from "@bespeak/assets/manifest" with {type: "json"};
 import {keeperWallet, keeperAccount, publicWriteClient, deployment} from "./config.js";
 
@@ -135,6 +135,10 @@ async function main() {
     args: [
       {
         inputToken: stable,
+        // v1.1 fields. A buy never names its own output: the registry decides what the
+        // asset is, and a caller-supplied value here is discarded by the contract.
+        outputToken: "0x0000000000000000000000000000000000000000" as Address,
+        side: OrderSide.BUY,
         assetId: asset.assetId as Hash,
         receiver: user,
         triggerType: condition,

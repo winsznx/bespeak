@@ -11,7 +11,10 @@
     "keeper:dry": "tsx src/run-keeper.ts --dry-run",
     "routers:push": "tsx src/cli-routers.ts",
     "order": "tsx src/cli-order.ts",
-    "cancel": "tsx src/cli-cancel.ts"
+    "cancel": "tsx src/cli-cancel.ts",
+    "sell": "tsx src/cli-sell.ts",
+    "sample": "tsx src/cli-sample.ts",
+    "reverify": "tsx src/cli-reverify.ts"
   },
   "dependencies": {
     "@bespeak/shared": "workspace:*",
@@ -31,6 +34,7 @@
   "exports": {
     "./run-keeper": "./src/run-keeper.ts",
     "./keeper": "./src/keeper.ts",
-    "./config": "./src/config.ts"
+    "./config": "./src/config.ts",
+    "./sampler": "./src/sampler.ts"
   }
 }

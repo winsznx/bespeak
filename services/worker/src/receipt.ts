@@ -24,8 +24,12 @@ export interface BespeakReceipt {
   underlyingAddress: Address;
   wrapperAddress: Address | null;
   wrapperVersion: number;
-  /// Which instrument the user actually received. Never hidden (PRD 19).
-  deliveredInstrument: "underlying" | "wrapped";
+  /// Which way the order traded (v1.1). A receipt that did not say this would describe a
+  /// sale and a purchase in identical words.
+  side: "BUY" | "SELL";
+  /// Which instrument the user actually received. Never hidden (PRD 19). A sell delivers a
+  /// stablecoin, so the honest answer there is neither "wrapped" nor "underlying".
+  deliveredInstrument: "underlying" | "wrapped" | "stablecoin";
   inputToken: Address;
   inputTokenSymbol: string;
 

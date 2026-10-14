@@ -3,7 +3,7 @@ import {join, dirname} from "node:path";
 import {fileURLToPath} from "node:url";
 import {formatEther, type Address, type Hash} from "viem";
 import {BespeakOrderManagerAbi} from "@bespeak/sdk";
-import {xLayer, TriggerType} from "@bespeak/shared";
+import {xLayer, OrderSide, TriggerType} from "@bespeak/shared";
 import {observeSessions, signObservation} from "@bespeak/conditions";
 import {OkxDexClient, validateRoute} from "@bespeak/okx";
 import {
@@ -22,6 +22,7 @@ import {
   loadActiveOrders,
   registrySymbols,
   resolveRoute,
+  deliveredTokenFor,
   type OrderView,
   type RouteSource,
 } from "./keeper.js";
@@ -99,7 +100,10 @@ async function executeOrder(
   const client = publicWriteClient();
   const wallet = keeperWallet();
   const account = keeperAccount();
-  const outputToken = outputTokenFor.get(order.assetId)!;
+  // Direction-aware, and shared with the assessment path so the two cannot disagree about
+  // what this execution is supposed to deliver.
+  const outputToken = deliveredTokenFor(order, outputTokenFor);
+  if (!outputToken) throw new Error(`no output token resolvable for order ${order.id}`);
   const symbol = symbolFor.get(order.assetId)!;
 
   // Re-derive condition and route immediately before submitting, so nothing executes on a
@@ -241,6 +245,9 @@ function buildReceipt(args: {
 }): BespeakReceipt {
   const {order, verification, observation, route, routeSource} = args;
   const manifestAsset = assetManifest.assets.find((a) => a.symbol === args.symbol);
+  // Direction decides several of the fields below, so it is resolved once here rather than
+  // re-derived at each one.
+  const isSell = order.side === OrderSide.SELL;
 
   const draft: Omit<BespeakReceipt, "receiptId"> = {
     receiptVersion: "1.0",
@@ -265,13 +272,19 @@ function buildReceipt(args: {
     // Derived, not assumed. The adapter delivers whatever the registry names as the output
     // token, and for these assets that is the ERC-4626 wrapper; saying "wrapped" while
     // carrying a null wrapper address would be a receipt contradicting itself.
-    deliveredInstrument:
-      manifestAsset?.wrapper &&
-      manifestAsset.wrapper.toLowerCase() === args.outputToken.toLowerCase()
+    side: isSell ? "SELL" : "BUY",
+    deliveredInstrument: isSell
+      ? "stablecoin"
+      : manifestAsset?.wrapper &&
+          manifestAsset.wrapper.toLowerCase() === args.outputToken.toLowerCase()
         ? "wrapped"
         : "underlying",
     inputToken: order.inputToken,
-    inputTokenSymbol: manifestAsset?.route?.quoteSymbol ?? "",
+    // On a sell the thing being spent is the asset itself, so naming the payment stablecoin
+    // here would describe the wrong side of the trade.
+    inputTokenSymbol: isSell
+      ? args.symbol
+      : (manifestAsset?.route?.quoteSymbol ?? ""),
 
     triggerType: triggerName(order.triggerType),
     conditionIntent:

@@ -31,9 +31,24 @@
       "BESPEAK_VAULT_FACTORY": "0xC47315E29b4b8AA5aF26c3603f97bb8341d3766B",
       "BESPEAK_EXECUTION_ADAPTER": "0x8fe9dB236df3E7F810D2C2eDE908B3B01C166Ca8",
       "BESPEAK_CONDITION_VERIFIER": "0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6",
+      // v1.1, the generation the web app and the MCP server write to. The keeper ticks
+      // both: an order nothing watches is worse than no order at all.
+      "BESPEAK_ORDER_MANAGER_V11": "0xF803E6CA20D878e72694f6a9b2fB6D0dDF06BC43",
+      "BESPEAK_VAULT_FACTORY_V11": "0xf4a987531b01C88E05442fe8aa228E3E6ed1A3c8",
+      "BESPEAK_EXECUTION_ADAPTER_V11": "0xA6DE5fdF38619BBc51d198bE7724795B9Ca29F47",
       "BESPEAK_VERIFY_TIMEOUT_MS": "45000",
       "RECEIPT_INGEST_URL": "https://bespeak.timjosh507.workers.dev/api/receipts"
   },
+  // The open spread dataset. The keeper is the only writer: it already holds the OKX
+  // credentials and already runs on a schedule, so sampling costs one binding rather than
+  // a second service. The web worker binds the same database read-only in practice.
+  "d1_databases": [
+    {
+      "binding": "DATA",
+      "database_name": "bespeak-data",
+      "database_id": "3bd0342d-4a34-4571-9929-1194ddea37b8"
+    }
+  ],
   "observability": {
     "enabled": true
   }
