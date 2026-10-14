@@ -17,6 +17,9 @@ export interface ReceiptViewProps {
   outputDecimals: number;
   receiver: string;
   conditionLabel: string;
+  /// True when the order sold the asset for a stablecoin. Everything the page says about
+  /// what was spent and what arrived depends on it, so it is passed rather than guessed.
+  selling?: boolean;
 }
 
 /// The completion surface.
@@ -26,6 +29,11 @@ export interface ReceiptViewProps {
 /// are all kept — one layer down, under "Verify execution".
 export function ReceiptView(p: ReceiptViewProps) {
   const {receipt} = p;
+  const selling = Boolean(p.selling);
+  // A sell is denominated in the asset, not in dollars. Prefixing a currency symbol onto an
+  // 18 decimal token amount formatted against 6 decimals is how this page came to report a
+  // 0.0008 TSLAx sale as "$800,000,000.00".
+  const spentPrefix = selling ? "" : "$";
   const verified = receipt?.finalOutcomeStatus === "VERIFIED_FILLED";
   // Read back from the chain's own OrderExecuted event when the keeper's receipt file is
   // not on this server. The purchase did complete, and the amounts are the contract's, so
@@ -40,7 +48,7 @@ export function ReceiptView(p: ReceiptViewProps) {
           <Seal verified={complete} />
           <div style={{minWidth: 0}}>
             <h1 className="t-h1" style={{fontSize: "clamp(26px,3.2vw,38px)", marginBottom: 6}}>
-              {complete ? "Purchase complete" : "Execution recorded"}
+              {complete ? (selling ? "Sale complete" : "Purchase complete") : "Execution recorded"}
             </h1>
             <AssetIdentity
               symbol={p.symbol}
@@ -65,7 +73,8 @@ export function ReceiptView(p: ReceiptViewProps) {
                 Spent
               </div>
               <div className="t-figure">
-                ${formatAmount(BigInt(receipt.actualInputSpent), p.inputDecimals)}
+                {spentPrefix}
+                {formatAmount(BigInt(receipt.actualInputSpent), p.inputDecimals, selling ? 6 : 2)}
               </div>
               <div style={{marginTop: 8}}>
                 <TokenIdentity symbol={p.inputSymbol} size="xs" muted />
