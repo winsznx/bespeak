@@ -27,9 +27,9 @@
   "marketStatus": "n/a",
   "corporateActionState": "none pending",
   "amountReserved": "400000",
-  "actualInputSpent": "0",
+  "actualInputSpent": "400000",
   "unusedInputReleased": "0",
-  "actualOutputReceived": "0",
+  "actualOutputReceived": "1775611916972801",
   "minimumOutput": "1762294827595504",
   "quoteSource": "Uniswap v3 pool, quoted on chain via QuoterV2",
   "quoteTimestamp": "2026-09-26T00:13:42.000Z",
@@ -49,18 +49,102 @@
   "firstVerificationAt": "2026-09-26T00:13:49.205Z",
   "finalVerificationAt": "2026-09-26T00:15:49.406Z",
   "verificationPolicy": "3 confirmations, independent RPC readback",
-  "confirmations": 0,
+  "confirmations": 1639276,
   "verificationChecks": [
     {
-      "name": "transaction included",
+      "name": "transaction status",
+      "passed": true,
+      "expected": "success",
+      "observed": "success"
+    },
+    {
+      "name": "block still canonical",
+      "passed": true,
+      "expected": "0x0f2457cc2dcf44915808d67a37a29802c34368603fac5b08a5291f0dfab1e174",
+      "observed": "0x0f2457cc2dcf44915808d67a37a29802c34368603fac5b08a5291f0dfab1e174"
+    },
+    {
+      "name": "order terminal state",
+      "passed": true,
+      "expected": "FILLED",
+      "observed": "2"
+    },
+    {
+      "name": "receiver unchanged from intent",
+      "passed": true,
+      "expected": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088",
+      "observed": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088"
+    },
+    {
+      "name": "executed exactly once",
+      "passed": true,
+      "expected": "1",
+      "observed": "1"
+    },
+    {
+      "name": "OrderExecuted event present",
+      "passed": true,
+      "expected": "one matching event",
+      "observed": "found"
+    },
+    {
+      "name": "output asset is the registered asset",
+      "passed": true,
+      "expected": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5",
+      "observed": "0xa8ddb5Cd96b5222AFe198316E9A57CAA642850D5"
+    },
+    {
+      "name": "input actually spent",
+      "passed": true,
+      "expected": "> 0",
+      "observed": "400000"
+    },
+    {
+      "name": "reservation fully settled",
+      "passed": true,
+      "expected": "closed, 0 remaining",
+      "observed": "active=false remaining=0"
+    },
+    {
+      "name": "receiver balance increased by the reported output",
       "passed": false,
-      "expected": "receipt present",
-      "observed": "not found in window"
+      "expected": "measured before submission",
+      "observed": "not recorded, and not reconstructible afterwards",
+      "note": "never asserted retrospectively; a pass invented here would be a false claim"
+    },
+    {
+      "name": "vault input decreased by exactly the reported spend",
+      "passed": false,
+      "expected": "measured before submission",
+      "observed": "not recorded, and not reconstructible afterwards",
+      "note": "never asserted retrospectively; a pass invented here would be a false claim"
     }
   ],
-  "finalOutcomeStatus": "VERIFICATION_TIMEOUT",
+  "finalOutcomeStatus": "PARTIALLY_VERIFIED",
   "limitations": [
     "Market session was established from the xStocks issuer's published trading state and signed by the Bespeak operator. It is operator-attested, not oracle-verified. The signature proves which key asserted this state and when; it does not prove the state itself was correct."
   ],
-  "receiptId": "0xa91fc089b39fd8109ffe1db50a05b2b36927503cc73513812779957413931efb"
+  "receiptId": "0xa91fc089b39fd8109ffe1db50a05b2b36927503cc73513812779957413931efb",
+  "amendedAt": "2026-10-14T23:35:08.054Z",
+  "amendments": [
+    {
+      "field": "actualInputSpent",
+      "was": "0",
+      "now": "400000",
+      "why": "corrected from the contract's own OrderExecuted event in 0x9f7f870a8a3549de385cbc7ab771284270589201f1807138e4501d2f03a65cad"
+    },
+    {
+      "field": "actualOutputReceived",
+      "was": "0",
+      "now": "1775611916972801",
+      "why": "corrected from the contract's own OrderExecuted event in 0x9f7f870a8a3549de385cbc7ab771284270589201f1807138e4501d2f03a65cad"
+    },
+    {
+      "field": "finalOutcomeStatus",
+      "was": "VERIFICATION_TIMEOUT",
+      "now": "PARTIALLY_VERIFIED",
+      "why": "re-verified against https://xlayerrpc.okx.com; the transaction is present, successful and canonical"
+    }
+  ],
+  "amendmentMethod": "Re-read from https://xlayerrpc.okx.com, which did not broadcast the transaction. Amounts taken from the contract's own OrderExecuted event. Checks that could only be answered at execution time were preserved, never re-asserted."
 }

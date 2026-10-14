@@ -27,14 +27,14 @@
   "marketStatus": "market",
   "corporateActionState": "none pending",
   "amountReserved": "1000000",
-  "actualInputSpent": "0",
+  "actualInputSpent": "1000000",
   "unusedInputReleased": "0",
-  "actualOutputReceived": "0",
+  "actualOutputReceived": "4442977030048732",
   "minimumOutput": "4409654702323366",
-  "quoteSource": "OKX DEX aggregator v6",
+  "quoteSource": "Uniswap v3 QuoterV2",
   "quoteTimestamp": "2026-09-25T19:54:24.000Z",
   "quoteHash": null,
-  "routeSummary": "OKX DEX router 0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
+  "routeSummary": "Uniswap v3 SwapRouter02 0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
   "routerAddress": "0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
   "approvalTarget": "0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
   "executionPrice": null,
@@ -123,5 +123,33 @@
     "Market session was established from the xStocks issuer's published trading state and signed by the Bespeak operator. It is operator-attested, not oracle-verified. The signature proves which key asserted this state and when; it does not prove the state itself was correct.",
     "Session was read as \"market\" for NVDAx at 2026-09-25T19:54:14.000Z and is claimed only for that observation."
   ],
-  "receiptId": "0x44072be5faf20526ef5700d516a01571159eb2e1748f0e0f12348e9bdc2c2337"
+  "receiptId": "0x44072be5faf20526ef5700d516a01571159eb2e1748f0e0f12348e9bdc2c2337",
+  "amendedAt": "2026-10-14T23:34:55.752Z",
+  "amendments": [
+    {
+      "field": "actualInputSpent",
+      "was": "0",
+      "now": "1000000",
+      "why": "corrected from the contract's own OrderExecuted event in 0xea4b71834b9b5fc30e022281049d9ce82ea3adddcbdcc3ac521fd15064fb2016"
+    },
+    {
+      "field": "actualOutputReceived",
+      "was": "0",
+      "now": "4442977030048732",
+      "why": "corrected from the contract's own OrderExecuted event in 0xea4b71834b9b5fc30e022281049d9ce82ea3adddcbdcc3ac521fd15064fb2016"
+    },
+    {
+      "field": "routeSummary",
+      "was": "OKX DEX router 0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
+      "now": "Uniswap v3 SwapRouter02 0x4f0C28f5926AFDA16bf2506D5D9e57Ea190f9bcA",
+      "why": "routerAddress is the Uniswap SwapRouter02, so the summary naming OKX was wrong"
+    },
+    {
+      "field": "quoteSource",
+      "was": "OKX DEX aggregator v6",
+      "now": "Uniswap v3 QuoterV2",
+      "why": "the route executed through the direct pool, so the quote did not come from OKX"
+    }
+  ],
+  "amendmentMethod": "Re-read from https://xlayerrpc.okx.com, which did not broadcast the transaction. Amounts taken from the contract's own OrderExecuted event. Checks that could only be answered at execution time were preserved, never re-asserted."
 }
