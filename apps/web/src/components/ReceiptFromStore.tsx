@@ -3,6 +3,8 @@
 import {useEffect, useState} from "react";
 import {ReceiptView} from "./ReceiptView";
 import type {StoredReceipt} from "@/lib/receipts";
+import {TradeCardExport} from "./app/TradeCardExport";
+import {tradeCardFromReceipt, type CardAssetContext} from "@/lib/tradeCardFrom";
 
 type ViewProps = Omit<Parameters<typeof ReceiptView>[0], "receipt">;
 
@@ -20,8 +22,9 @@ type ViewProps = Omit<Parameters<typeof ReceiptView>[0], "receipt">;
 export function ReceiptFromStore({
   orderId,
   receiptId,
+  cardContext,
   ...view
-}: {orderId?: string; receiptId?: string} & ViewProps) {
+}: {orderId?: string; receiptId?: string; cardContext?: CardAssetContext} & ViewProps) {
   const [receipt, setReceipt] = useState<StoredReceipt | null>(null);
   const [settled, setSettled] = useState(false);
 
@@ -50,5 +53,14 @@ export function ReceiptFromStore({
   // Until the lookup settles, render the unconfirmed view rather than a spinner: it is
   // what the page would otherwise have shown, and it is not wrong, only less complete.
   if (!settled) return <ReceiptView receipt={null} {...view} />;
-  return <ReceiptView receipt={receipt} {...view} />;
+  return (
+    <>
+      <ReceiptView receipt={receipt} {...view} />
+      {receipt && cardContext && (
+        <div style={{marginTop: 20}}>
+          <TradeCardExport data={tradeCardFromReceipt(receipt, cardContext)} />
+        </div>
+      )}
+    </>
+  );
 }
