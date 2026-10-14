@@ -1,0 +1,21 @@
+{
+  "name": "@bespeak/mcp-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bespeak/sdk": "workspace:*",
+    "@bespeak/assets": "workspace:*",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250204.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.36.0",
+    "@types/node": "^22.20.4"
+  }
+}

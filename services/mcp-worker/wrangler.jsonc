@@ -1,0 +1,21 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "bespeak-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  // nodejs_compat for viem's ABI encoding. global_fetch_strictly_public is what lets this
+  // worker reach the app's own public API: without it a fetch to our own workers.dev
+  // hostname resolves inside Cloudflare and comes back 404, which cost us a day once.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // Everything here is public. This worker holds no key, takes no custody and signs
+  // nothing, so there is no secret for it to leak.
+  "vars": {
+    "BESPEAK_APP_URL": "https://bespeak.timjosh507.workers.dev",
+    "XLAYER_RPC_URL": "https://xlayerrpc.okx.com",
+    "BESPEAK_ORDER_MANAGER": "0xF803E6CA20D878e72694f6a9b2fB6D0dDF06BC43",
+    "BESPEAK_VAULT_FACTORY": "0xf4a987531b01C88E05442fe8aa228E3E6ed1A3c8"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
