@@ -5,8 +5,8 @@
   "chainId": 196,
   "participation": "Remote Build",
   "primaryTrack": "Build a Market",
-  "generatedAt": "2026-09-25T23:21:37Z",
-  "commit": "41a4e68",
+  "generatedAt": "2026-10-14T22:59:32Z",
+  "commit": "dc6c127",
   "_status": "deployed to X Layer mainnet; canonical runs executed and independently verified",
   "contracts": {
     "_status": "deployed 2026-09-25 on chain 196; each address confirmed by eth_getCode on two RPCs that did not broadcast the deployment",
@@ -177,11 +177,14 @@
   },
   "limitations": [
     "The market-session condition source is Tier 3 operator-attested, not oracle-verified.",
-    "No external security audit. 52 tests including fuzzed accounting invariants and a mainnet-fork suite is not an audit.",
+    "No external security audit. 61 tests including fuzzed accounting invariants and a mainnet-fork suite is not an audit.",
     "The keeper is a single operator and admin is a single EOA; neither is a multisig.",
-    "No mainnet execution has occurred yet, so the headline claim is unproven.",
     "No adoption or traction is claimed. Test wallets are not users.",
-    "Supported assets are 12 of the issuer's 1026-asset catalogue, restricted to those with a verified deployment."
+    "Supported assets are 12 of the issuer's 1026-asset catalogue, restricted to those with a verified deployment.",
+    "v1.1 (the sell side) has one mainnet execution. It is proven to work, not proven at volume.",
+    "The web app currently writes orders against v1. The v1.1 sell path is driven from the CLI and the MCP server; it is deployed and executed on mainnet but is not yet a button in the web UI.",
+    "The open dataset began collecting on 2026-10-14. A short series is a weak claim, and the page says so rather than implying a settled finding.",
+    "Recurring instructions are BUY only. A scheduled exit has to reason about how much of a position remains, which is a different instrument and is not built."
   ],
   "routers": {
     "_status": "both venues allowlisted on chain; neither address was copied from documentation",
@@ -232,6 +235,27 @@
       "route": "okx-aggregator",
       "status": "VERIFIED_FILLED",
       "checks": "11/11"
+    },
+    {
+      "tx": "0xb8db501816d23fbaf5ab9fd31380c25d1134abe24e0530bdb17e1c7b02eaf606",
+      "block": 71833187,
+      "condition": "NEXT_REGULAR_SESSION",
+      "route": "okx-aggregator",
+      "status": "VERIFIED_FILLED",
+      "checks": "11/11",
+      "note": "waited while the market was closed and released itself when the session opened"
+    },
+    {
+      "tx": "0xb3615e9cd24c6499d6eeb9b3b55cc569ddf83a19f81b58b572e4fbeeb01e3085",
+      "block": 73249316,
+      "deployment": "v1.1",
+      "side": "SELL",
+      "condition": "IMMEDIATE",
+      "route": "okx-aggregator",
+      "status": "VERIFIED_FILLED",
+      "checks": "11/11",
+      "confirmations": 7,
+      "note": "sold 0.0008 TSLAx for 0.291975 USDC; the receiver's USDC balance moved by exactly the amount the contract's own event reported"
     }
   ],
   "refusalEvidence": {
@@ -239,5 +263,44 @@
     "observation": "the US regular session ended between runs; a NEXT_REGULAR_SESSION order then held its reserved capital instead of executing",
     "reason": "MARKET_CLOSED, issuer period=\"extended\"",
     "log": "evidence/market-closed-refusal.log"
+  },
+  "contractsV11": {
+    "_status": "deployed 2026-10-14 on chain 196 beside v1; wiring read back on xlayerrpc.okx.com, which did not broadcast the deployment",
+    "_adds": "the sell side: an order may now spend the registered xStock and deliver a supported stablecoin",
+    "_reuses": "AssetRegistry, RouterRegistry and AttestedSessionVerifier are the v1 contracts, unchanged. A v1.1 order is gated on the identical asset set at the identical registry revision as the v1 fills.",
+    "orderManager": "0xF803E6CA20D878e72694f6a9b2fB6D0dDF06BC43",
+    "vaultFactory": "0xf4a987531b01C88E05442fe8aa228E3E6ed1A3c8",
+    "executionAdapter": "0xA6DE5fdF38619BBc51d198bE7724795B9Ca29F47",
+    "assetRegistry": "0x462A8DF4b4e09E8A2B346E40A14c5b47c1eA1728",
+    "routerRegistry": "0xe8909CE9f80264F253aBE8eA50606a04C4a696c0",
+    "conditionVerifier": "0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6",
+    "whyOnlyThreeNew": "The vault was already multi-token and the adapter already generic over input and output, so direction lived in one line of the order manager. Only what is immutably bound to a manager had to be redeployed.",
+    "v1Status": "left running and untouched. v1 is the deployment the 25 and 28 Sep fills executed on."
+  },
+  "openDataset": {
+    "_what": "Executable round-trip cost for every supported xStock on X Layer, sampled continuously and tagged with the underlying equity's session state.",
+    "page": "https://bespeak.timjosh507.workers.dev/data",
+    "json": "https://bespeak.timjosh507.workers.dev/api/basis",
+    "csv": "https://bespeak.timjosh507.workers.dev/api/basis.csv",
+    "perAsset": "https://bespeak.timjosh507.workers.dev/api/basis/NVDAx",
+    "method": "Quote $100 of the payment stablecoin into the xStock through the OKX DEX aggregator, then quote exactly that many tokens back out. The difference in basis points is the headline series. Pool mid is read from the Uniswap v3 slot0 at the same moment.",
+    "collectionStarted": "2026-10-14",
+    "licence": "public, CORS open, no key",
+    "notClaimed": "This is not basis against the listed equity. There is no equity price oracle on X Layer and the issuer publishes no price, so any such figure would be invented."
+  },
+  "agentSurface": {
+    "_what": "Bespeak as MCP tools, so an agent with its own wallet can place a conditioned standing order.",
+    "endpoint": "https://bespeak-mcp.timjosh507.workers.dev/mcp",
+    "transport": "streamable HTTP, JSON-RPC 2.0, protocol 2025-06-18",
+    "tools": [
+      "list_assets",
+      "market_state",
+      "spread",
+      "build_order",
+      "order_status",
+      "receipt"
+    ],
+    "custody": "The server holds no key. build_order returns unsigned calldata for the caller's own signer; the server cannot sign, cannot move funds and takes no custody.",
+    "auth": "none. Every read describes a public chain and the write path cannot act."
   }
 }

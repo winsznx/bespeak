@@ -14,11 +14,11 @@ Commit: see `submission-facts.json` → `commit`.
 
 **Claim.** A conditioned standing-order primitive for tokenized equities: capital committed
 now, execution authorized later when a verifiable market condition becomes true, across
-immediate, session, availability and recurring surfaces — through one engine.
+immediate, session, availability and recurring surfaces, through one engine.
 
 | Artifact | Where |
 |---|---|
-| The four paths sharing one primitive | `contracts/src/BespeakOrderManager.sol` — one `_evaluate()`, `TriggerType` is the only branch |
+| The four paths sharing one primitive | `contracts/src/BespeakOrderManager.sol`, one `_evaluate()`, `TriggerType` is the only branch |
 | Why this is not a DCA bot | `README.md` § The problem; `docs/ARCHITECTURE.md` § The condition ladder |
 | Condition-source ladder with tier enforcement | `contracts/src/interfaces/IConditionSource.sol`, `AttestedSessionVerifier.sol` |
 | Proof a downgrade cannot happen silently | `ExecutionTest:test_P13_forbiddenTierDowngradeKeepsWaiting` |
@@ -30,18 +30,18 @@ immediate, session, availability and recurring surfaces — through one engine.
 ## 2. Product completeness
 
 **Claim.** A fresh user can connect, fund, create, wait, understand the wait, cancel,
-recover funds, and read a receipt — without developer narration.
+recover funds, and read a receipt, without developer narration.
 
 | Artifact | Where |
 |---|---|
-| Nine product routes | `apps/web/src/app/` — home, markets, asset, orders, vault, demand, activity, receipt, proof |
+| Nine product routes | `apps/web/src/app/`, home, markets, asset, orders, vault, demand, activity, receipt, proof |
 | Order composer covering all four paths | `apps/web/src/components/OrderComposer.tsx` |
 | Repeat series as a first-class object | `apps/web/src/components/RecurringList.tsx` |
 | Real hold reasons, not a generic spinner | `apps/web/src/components/OrdersClient.tsx` → `HoldReason` |
 | Disconnected / wrong-network / not-deployed / empty states | `ConnectButton.tsx`, every page's guard clauses |
-| Production build | `pnpm --filter @bespeak/web build` — 12 routes |
+| Production build | `pnpm --filter @bespeak/web build`, 12 routes |
 
-**PENDING.** Live deployed URL. External clean-browser acceptance pass.
+Live at https://bespeak.timjosh507.workers.dev. **PENDING.** External clean-browser acceptance pass by someone who did not build it.
 
 ---
 
@@ -53,7 +53,7 @@ return to a verified purchase or a plain explanation.
 | Artifact | Where |
 |---|---|
 | The burden/return contract, stated in product copy | `apps/web/src/app/page.tsx` § What you get for reserving capital |
-| Lazy recurrence — a 10-week plan does not lock 10 weeks of capital | `RecurringTest:test_P11_lazyReservationDoesNotLockTheWholePlan` |
+| Lazy recurrence, a 10-week plan does not lock 10 weeks of capital | `RecurringTest:test_P11_lazyReservationDoesNotLockTheWholePlan` |
 | Underfunded series holds instead of silently cancelling | `RecurringTest:test_P11_underfundedNextOccurrenceHoldsInsteadOfCancelling` |
 | Funds are always recoverable; expiry is permissionless | `BespeakOrderManager.expireOrder`, `ExecutionTest:test_P8_...` |
 | Plain-language reason codes | `packages/shared/src/types.ts` → `REASON_COPY` |
@@ -70,7 +70,7 @@ eligibility function, and a verifier that the broadcaster does not control.
 
 | Artifact | Where |
 |---|---|
-| 52 tests | `forge test --root contracts` |
+| 66 tests | `forge test --root contracts` |
 | Proof campaign, 27 cases | `node campaign/run.mjs` → `evidence/campaign.json` |
 | Fuzzed vault accounting identity | `VaultTest:testFuzz_accountingIdentityHolds` |
 | Fuzzed partial-consumption accounting | `AdapterTest:testFuzz_partialConsumptionAccounting` |
@@ -98,7 +98,7 @@ official xStocks verified on chain 196. Routing is OKX DEX.
 | Router/approve-target allowlist from the live API, never hardcoded | `services/worker/src/cli-routers.ts` |
 | Chainlink VerifierProxy confirmed live on 196 | `internal → docs/GATES`; `cast call` output in `submission-facts.json` |
 
-**PENDING.** Mainnet contract addresses. The canonical run with a live OKX route.
+Done. v1 and v1.1 are deployed on chain 196 and listed in the README; the canonical run executed through the live OKX aggregator route on 28 Sep (`0xb8db5018`), and the first sell executed on v1.1 on 14 Oct (`0xb3615e9c`).
 **Limitation.** OKX routing is implemented and unit-tested against fixtures; it has not been
 exercised against the live API.
 
@@ -113,7 +113,7 @@ primitive embeds where recurring intent already lives.
 |---|---|
 | Recurrence producing independent occurrences | `RecurringTest:test_P11_twoIndependentOccurrencesComplete` |
 | Demand surface counting only live reservations | `apps/web/src/app/demand/page.tsx`, `/api/demand` |
-| Read API for integrators and agents | `apps/web/src/app/api/` — 7 routes |
+| Read API for integrators and agents | `apps/web/src/app/api/`, 7 routes |
 | Distribution thesis, stated as a thesis | `README.md`; PRD §74 |
 
 **Limitation.** Zero users. The Demand page and `/api/demand` both carry a line saying they
@@ -129,7 +129,7 @@ honest discrepancy report.
 | Artifact | Where |
 |---|---|
 | Integration findings from this build | `docs/SPONSOR_FINDINGS.md` (published subset) |
-| xStocks API pagination trap — page 0 hides NVDA/TSLA/AAPL | ibid. F-04 |
+| xStocks API pagination trap, page 0 hides NVDA/TSLA/AAPL | ibid. F-04 |
 | OKX DEX docs list four auth headers; the SDK sends five | ibid. F-05 |
 | Data Streams announcement vs docs-tracking discrepancy, reported as open | ibid. F-01 |
 | Reusable pattern: bounded adapter + closed-loop verification | `docs/ARCHITECTURE.md` |
@@ -145,7 +145,7 @@ honest discrepancy report.
 | Official categories claimed | 7 |
 | Categories with at least one exact bound artifact | 7 |
 | **Binding coverage** | **100%** |
-| Categories with a PENDING item | 4 — all pending items depend on the mainnet run |
+| Categories with a PENDING item | 3. The mainnet run is done; what remains needs an outsider, not a deploy |
 
 No category's claim rests solely on a pending artifact; each has at least one that is true
 and checkable today.

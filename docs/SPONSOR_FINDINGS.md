@@ -7,7 +7,7 @@ build, not recalled from documentation.
 Reported in the spirit of being useful to the ecosystem rather than scoring points: where
 we could not tell whether a gap was theirs or ours, we say so.
 
-## F-01 — Discrepancy between the X Layer Data Streams announcement and docs-repo tracking data
+## F-01, Discrepancy between the X Layer Data Streams announcement and docs-repo tracking data
 PRESERVED AS AN OPEN DISCREPANCY. This is a report, not a conclusion.
 
 Established:
@@ -43,19 +43,19 @@ and that ambiguity is itself the useful finding for both parties.
 Bespeak's position: Tier 1 is unused because we could not exercise it end to end, not
 because we concluded it is unavailable. No Bespeak artifact claims the streams are absent.
 
-## F-02 — Chainlink docs source has a duplicated testnet verifier address
+## F-02, Chainlink docs source has a duplicated testnet verifier address
 In `StreamsNetworksData.ts`, the X Layer Testnet `verifierProxy`
 (0x72790f9eB82db492a7DDb6d2af22A270Dcc3Db64) is byte-identical to the "Stable Testnet"
 entry directly above it. Mainnet is unique and correct. Looks like a copy/paste artifact in
 the docs source. Low severity, clean upstream issue candidate once the core build is healthy.
 
-## F-03 — PRD's assumed Data Streams schema is stale
+## F-03, PRD's assumed Data Streams schema is stale
 Schema v4 (which carries `marketStatus uint8`) is deprecated. The equity feeds use schema
 **v11 "RWA Advanced"**, whose `marketStatus` is `uint32` with a 6-value mapping
 (0 Unknown, 1 Pre, 2 Regular, 3 Post, 4 Overnight, 5 Closed) rather than v4's 3 values.
 Any integration written from older documentation will decode the wrong struct.
 
-## F-04 — xStocks API: real field names differ from commonly assumed ones
+## F-04, xStocks API: real field names differ from commonly assumed ones
 - Domain is `xstocks.fi`, not `xstocks.com`.
 - Pending corporate action field is `newMultiplier`, not `pendingMultiplier`.
   Full shape: `{currentMultiplier, newMultiplier, activationDateTime, reason}`.
@@ -64,18 +64,18 @@ Any integration written from older documentation will decode the wrong struct.
 - `/api/v2/openapi.json` returns 404.
 - The assets endpoint is paginated (`?page=N`, 100/page, `page.hasNextPage`); an integrator
   who reads only page 0 sees 100 of 1026 assets and will wrongly conclude that NVDA/TSLA/
-  AAPL/SPY are not in the catalogue. They are — on pages 1+.
+  AAPL/SPY are not in the catalogue. They are, on pages 1+.
 
-## F-05 — OKX DEX API has no unauthenticated tier, and the doc'd header set is incomplete
+## F-05, OKX DEX API has no unauthenticated tier, and the doc'd header set is incomplete
 Every `/api/v6/dex/aggregator/*` path returns
 `{"msg":"Request header OK-ACCESS-KEY can not be empty.","code":"50103"}` unauthenticated.
-The public docs list four headers; the official `okx/okx-dex-sdk` sends five — the
+The public docs list four headers; the official `okx/okx-dex-sdk` sends five, the
 undocumented-in-that-page `OK-ACCESS-PROJECT` is mandatory. Following the docs page alone
 produces requests that fail.
 Also: many older documentation URLs (`/build/dev-docs/...`, `/build/dev-docs-v5/...`) are
 dead; the live tree is `/onchainos/dev-docs/...`.
 
-## F-06 — The executable pair for an xStock on X Layer is not guessable from the metadata
+## F-06, The executable pair for an xStock on X Layer is not guessable from the metadata
 Discovered in this build by tracing real transfer counterparties, then scanning a
 Uniswap-V3-compatible factory at 0x4B2ab38DBF28D31D467aA8993f6c2585981D6804 across 192
 (quote, token, fee) combinations for the 12 launch assets.
@@ -85,8 +85,7 @@ learn by shipping a broken pair:
 
 1. **All liquidity is against the ERC-4626 wrapper, never the underlying rebasing token.**
    Every underlying pool discovered holds exactly zero. An integration that routes to the
-   base xStock address — the one the issuer API lists first as `deployments[].address` —
-   finds no liquidity at all.
+   base xStock address, the one the issuer API lists first as `deployments[].address`, finds no liquidity at all.
 
 2. **The quote stablecoin differs per asset, and the issuer metadata does not say which.**
    The xStocks API lists both USDC and USDG for every X Layer deployment, which reads as
@@ -104,5 +103,5 @@ docs, or as a per-deployment "executable pair" field in the API.
 
 Bespeak's response: the registry sync now discovers the pair on chain per asset and the UI
 defaults to it, warning if a user selects the other stablecoin. Discovery never bypasses
-the trust boundary — execution still goes through the adapter, the router allowlist and the
+the trust boundary, execution still goes through the adapter, the router allowlist and the
 balance-delta postconditions.

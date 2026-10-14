@@ -1,7 +1,7 @@
 # Architecture
 
 Bespeak turns a pre-authorized intent into a bounded future execution on X Layer, then
-proves the result independently. This document explains how, and — more usefully — why each
+proves the result independently. This document explains how, and, more usefully, why each
 boundary sits where it does.
 
 ---
@@ -30,8 +30,8 @@ boundary sits where it does.
  verifier ──► re-read order state, balances, event, block ──► receipt outcome
 ```
 
-Off-chain there are exactly two long-running concerns — a keeper that proposes executions
-and a verifier that judges them — plus a Next.js app. There is no indexer database in the
+Off-chain there are exactly two long-running concerns, a keeper that proposes executions
+and a verifier that judges them, plus a Next.js app. There is no indexer database in the
 authority path, by design (see *No hidden authority* below).
 
 ---
@@ -44,8 +44,8 @@ authority path, by design (see *No hidden authority* below).
 own owner. It knows one thing: capital committed to reservation `id` may be spent up to
 what remains on that reservation, and not one wei further.
 
-That turns INV-01 — *a vault may never spend more than the amount reserved to the executing
-order* — from a rule the order manager must remember into a structural property of the
+That turns INV-01, *a vault may never spend more than the amount reserved to the executing
+order*, from a rule the order manager must remember into a structural property of the
 contract that holds the money. If the order manager were compromised tomorrow, it still
 could not overspend a reservation.
 
@@ -59,7 +59,7 @@ correctly and can never be double-spent against an existing reservation. It is f
 that service's claims about what the route will do.
 
 It allowlists **who** may be called (router) and **who** may be approved (approval target)
-as two independent sets — because the OKX API returns them separately, and either one alone
+as two independent sets, because the OKX API returns them separately, and either one alone
 would be enough to redirect the input. It approves exactly the attempt amount, clears the
 allowance unconditionally afterwards, and then measures what actually happened from token
 balance deltas:
@@ -80,9 +80,9 @@ The adapter cannot decide an order is eligible. That belongs to the order manage
 `checkExecution()` is a view. `execute()` is a transaction. Both call the same internal
 `_evaluate()`.
 
-This matters more than it looks. It means a refusal can be *inspected* — a reviewer can ask
+This matters more than it looks. It means a refusal can be *inspected*, a reviewer can ask
 the contract "why is this order not executing?" and get `MARKET_CLOSED` or `QUOTE_STALE`
-back — without anyone manufacturing a failed transaction to produce evidence. And it means
+back, without anyone manufacturing a failed transaction to produce evidence. And it means
 simulation and reality cannot drift: there is no second copy of the rules to fall out of
 sync.
 
@@ -93,7 +93,7 @@ nor hold something the contract would allow.
 ### 4. The component that broadcasts does not declare success
 
 The keeper submits through `XLAYER_RPC_URL`. The verifier reads through
-`XLAYER_VERIFY_RPC_URL`. If they are equal the verifier refuses to run — enforced in code,
+`XLAYER_VERIFY_RPC_URL`. If they are equal the verifier refuses to run, enforced in code,
 not by convention, because an independence property left to a config file decays silently.
 
 Verification re-reads the block by number to confirm it still carries the same hash
@@ -118,7 +118,7 @@ establish the answer. Nothing upgrades silently.
 
 | Tier | Source | Status |
 |---|---|---|
-| 1 `VERIFIED_DATA_STREAMS` | Chainlink Data Streams, schema v11 `marketStatus` | interface ready, not exercised — see README |
+| 1 `VERIFIED_DATA_STREAMS` | Chainlink Data Streams, schema v11 `marketStatus` | interface ready, not exercised, see README |
 | 2 `SECONDARY_VERIFIED_ORACLE` | another verifiable oracle on 196 | none identified |
 | 3 `ATTESTED_SESSION` | xStocks issuer's published trading state, EIP-712 signed by the keeper | **deployed** |
 
@@ -131,7 +131,7 @@ issuer payload hash. A keeper that merely sends `execute()` leaves no such artif
 
 **No silent downgrade.** Every order stores `minSourceTier`. Tiers are numbered so that
 higher is weaker, and an observation weaker than the order authorized returns
-`CONDITION_TIER_NOT_AUTHORIZED` — the order keeps waiting rather than quietly settling.
+`CONDITION_TIER_NOT_AUTHORIZED`, the order keeps waiting rather than quietly settling.
 
 Validity and session are deliberately separate concerns. The source reports
 `valid = is this fresh enough to believe`; the order manager decides whether the session it
@@ -143,8 +143,7 @@ distinguishable, so a user sees which one actually held their order.
 ## Asset identity
 
 A ticker string decides nothing. `AssetRegistry` entries carry the issuer's canonical id,
-the X Layer deployment, the current wrapper, and the provenance that justifies them —
-source URI, payload hash, fetch timestamp — and every mutation emits all of it, so the
+the X Layer deployment, the current wrapper, and the provenance that justifies them, source URI, payload hash, fetch timestamp, and every mutation emits all of it, so the
 registry's history is auditable from logs alone.
 
 Promotion to `SUPPORTED` requires a non-zero on-chain deployment, which is what makes
@@ -153,7 +152,7 @@ proven deployment cannot be promoted, therefore cannot execute, therefore the or
 
 The sync tool goes further than the API: for each asset it calls `symbol()`, `decimals()`
 and, for wrappers, `asset()` on chain, and only an asset whose wrapper round-trips to the
-published underlying is promoted. One that fails is written as `DISCOVERED` — visible and
+published underlying is promoted. One that fails is written as `DISCOVERED`, visible and
 inspectable, but unexecutable.
 
 `revision` bumps on every change, and orders pin the revision they were created under, so a
@@ -170,7 +169,7 @@ reaches a terminal state, each with its own order id, its own reservation and it
 receipt. Completed occurrences are never mutated.
 
 When the vault cannot fund the next one, the series emits `RecurringOccurrenceHeld` with
-`INSUFFICIENT_RESERVED_BALANCE` and stays **active** — the user tops up and it resumes. A
+`INSUFFICIENT_RESERVED_BALANCE` and stays **active**, the user tops up and it resumes. A
 series that silently cancelled itself because a balance dipped would be the worst possible
 behaviour for a standing instruction.
 
@@ -188,11 +187,10 @@ quietly becomes the truth. Bespeak has no such row.
 The web app reads orders and vault balances from the contracts on every poll. The keeper
 reads from the contracts. The verifier reads from the contracts, through a different node.
 Receipts are content-addressed JSON files rather than rows, because evidence a running
-service can silently rewrite is weaker evidence — a file can be committed, hashed, and
+service can silently rewrite is weaker evidence, a file can be committed, hashed, and
 re-checked by someone who does not trust the server that produced it.
 
-`INV-19` — *a database or keeper state cannot make an inactive on-chain order executable* —
-is satisfied by there being nowhere for such state to live.
+`INV-19`, *a database or keeper state cannot make an inactive on-chain order executable*, is satisfied by there being nowhere for such state to live.
 
 ---
 
@@ -202,8 +200,7 @@ Admin may pause an asset, pause the system, repoint infrastructure, and manage t
 and attestor sets. Every privileged action emits an event.
 
 Admin may **not** withdraw user funds, redirect a receiver, alter an order's amount or
-limits, or execute an expired order. There is no function that does any of those things —
-this is not a policy, it is an absence, and `test_adminCannotTouchUserOrder` asserts it.
+limits, or execute an expired order. There is no function that does any of those things, this is not a policy, it is an absence, and `test_adminCannotTouchUserOrder` asserts it.
 
 There is no proxy and no upgradeability. A bad deployment is replaced by deploying again
 and repointing, which is visible on chain, rather than by mutating code behind users.

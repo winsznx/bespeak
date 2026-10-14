@@ -62,13 +62,13 @@ entire transaction.
 ### A token contract masquerading as an official asset
 Ticker strings decide nothing. The registry stores the issuer's canonical id and the exact
 deployment address, and the sync tool independently calls `symbol()` and, for wrappers,
-`asset()` on chain — an asset whose wrapper does not round-trip to the published underlying
+`asset()` on chain, an asset whose wrapper does not round-trip to the published underlying
 is never promoted to `SUPPORTED`. Promotion also requires a non-zero deployment address.
 *Proven:* `test_P18_assetWithoutDeploymentCannotBeSupported`, `test_fork_assetProvenanceHoldsOnChain`.
 
 ### A stale or fabricated market observation
 Attestations are EIP-712 signatures over the exact claim. A signature from an unauthorized
-key **reverts** — a forgery is an attack, not a market reading. A stale attestation returns
+key **reverts**, a forgery is an attack, not a market reading. A stale attestation returns
 `valid = false`, which surfaces as an inspectable `CONDITION_REPORT_STALE` rather than an
 opaque revert. An observation timestamped meaningfully in the future reverts.
 
@@ -78,7 +78,7 @@ eligibility.
 
 ### A silently weakened condition source
 Tiers are numbered so higher is weaker. Every order stores `minSourceTier`, and an
-observation weaker than authorized returns `CONDITION_TIER_NOT_AUTHORIZED` — the order
+observation weaker than authorized returns `CONDITION_TIER_NOT_AUTHORIZED`, the order
 waits rather than settling.
 *Proven:* `test_P13_forbiddenTierDowngradeKeepsWaiting`.
 
@@ -96,7 +96,7 @@ actually spent rather than what was authorized.
 
 ### A keeper that disappears, or runs out of gas mid-flight
 The keeper cannot hold funds and cannot change intent. It stops attempting value-moving
-transactions below a configured OKB threshold — halting early leaves the user's cancel and
+transactions below a configured OKB threshold, halting early leaves the user's cancel and
 withdraw paths completely intact, whereas running out mid-execution would not.
 
 Users are never dependent on the operator to recover capital: `cancelOrder` is owner-only
@@ -113,7 +113,7 @@ Admin may pause an asset, pause the system, repoint infrastructure, and manage k
 attestor sets. Every privileged action emits an event.
 
 Admin **cannot** withdraw user funds, redirect a receiver, change an order's amount or
-limits, or execute an expired order. No function exists that does any of these — this is an
+limits, or execute an expired order. No function exists that does any of these, this is an
 absence, not a policy.
 *Proven:* `test_adminCannotTouchUserOrder`.
 
@@ -135,11 +135,11 @@ These are real and are stated rather than mitigated.
    asserted which session and when; it does not prove the assertion was correct. A
    compromised attestor key could assert a session that is not occurring. It could not
    change the amount, receiver, asset or limits, and could not execute a cancelled or
-   expired order — the blast radius is "executes inside your envelope at the wrong time",
+   expired order, the blast radius is "executes inside your envelope at the wrong time",
    not "steals funds". Mitigated operationally by a short freshness window (60s) and a
    revocable attestor set.
 
-2. **No formal verification or external audit.** 52 tests including fuzzed accounting
+2. **No formal verification or external audit.** 66 tests including fuzzed accounting
    invariants and a mainnet-fork suite. That is not an audit.
 
 3. **The keeper is currently a single operator.** The architecture supports multiple

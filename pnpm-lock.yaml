@@ -224,6 +224,31 @@ importers:
         specifier: ^4.36.0
         version: 4.136.1(@cloudflare/workers-types@4.20260702.1)(@types/node@22.20.4)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
 
+  services/mcp-worker:
+    dependencies:
+      '@bespeak/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
+      '@bespeak/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      viem:
+        specifier: ^2.21.0
+        version: 2.56.8(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@4.6.5)
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250204.0
+        version: 4.20260702.1
+      '@types/node':
+        specifier: ^22.20.4
+        version: 22.20.4
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.36.0
+        version: 4.136.1(@cloudflare/workers-types@4.20260702.1)(@types/node@22.20.4)(bufferutil@4.1.0)(utf-8-validate@5.0.10)
+
   services/worker:
     dependencies:
       '@bespeak/assets':
