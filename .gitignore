@@ -45,3 +45,6 @@ apps/web/.wrangler/
 
 # Another agent's Remotion launch-video project; not part of the product build.
 apps/launch-film/
+
+# Stray screenshots dropped into the repo root while working.
+/*.png
