@@ -9,7 +9,7 @@ import {BespeakVaultFactory} from "../src/BespeakVaultFactory.sol";
 import {BespeakOrderManager} from "../src/BespeakOrderManager.sol";
 import {OkxExecutionAdapter} from "../src/OkxExecutionAdapter.sol";
 import {AttestedSessionVerifier} from "../src/AttestedSessionVerifier.sol";
-import {AssetStatus, MarketStatus, SourceTier, TriggerType} from "../src/BespeakTypes.sol";
+import {AssetStatus, MarketStatus, OrderSide, SourceTier, TriggerType} from "../src/BespeakTypes.sol";
 import {MockERC20, MockRouter} from "./mocks/Mocks.sol";
 
 /// @notice Shared fixture: a fully wired Bespeak deployment with one supported asset,
@@ -143,6 +143,8 @@ abstract contract BespeakBase is Test {
         return manager.createOrder(
             BespeakOrderManager.CreateOrderParams({
                 inputToken: address(usdc),
+                outputToken: address(0),
+                side: OrderSide.BUY,
                 assetId: ASSET_NVDA,
                 receiver: user,
                 triggerType: TriggerType.IMMEDIATE,
@@ -165,6 +167,8 @@ abstract contract BespeakBase is Test {
         return manager.createOrder(
             BespeakOrderManager.CreateOrderParams({
                 inputToken: address(usdc),
+                outputToken: address(0),
+                side: OrderSide.BUY,
                 assetId: ASSET_NVDA,
                 receiver: user,
                 triggerType: TriggerType.NEXT_REGULAR_SESSION,

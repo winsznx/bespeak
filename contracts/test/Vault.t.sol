@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {BespeakBase} from "./Base.t.sol";
 import {BespeakVault} from "../src/BespeakVault.sol";
 import {BespeakOrderManager} from "../src/BespeakOrderManager.sol";
-import {SourceTier, TriggerType} from "../src/BespeakTypes.sol";
+import {OrderSide, SourceTier, TriggerType} from "../src/BespeakTypes.sol";
 
 /// @notice The vault's job is that `available + reserved == balance` holds no matter what
 /// sequence of deposits, orders, cancellations and fills occurred.
@@ -73,6 +73,8 @@ contract VaultTest is BespeakBase {
         manager.createOrder(
             BespeakOrderManager.CreateOrderParams({
                 inputToken: address(usdc),
+                outputToken: address(0),
+                side: OrderSide.BUY,
                 assetId: ASSET_NVDA,
                 receiver: user,
                 triggerType: TriggerType.IMMEDIATE,

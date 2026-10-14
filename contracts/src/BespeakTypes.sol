@@ -19,6 +19,17 @@ enum TriggerType {
     WHEN_AVAILABLE
 }
 
+/// @notice Which way an order trades the asset it names.
+///
+/// BUY spends a supported stablecoin and delivers the registered xStock. SELL spends the
+/// registered xStock and delivers a supported stablecoin. Both sides run the identical
+/// condition ladder, registry gate and postconditions, direction changes which token moves,
+/// never what has to be true before it may move.
+enum OrderSide {
+    BUY,
+    SELL
+}
+
 /// @notice Registry lifecycle for an asset (PRD 18.1). Only SUPPORTED may execute.
 enum AssetStatus {
     DISCOVERED,
@@ -82,6 +93,10 @@ struct Order {
     address owner;
     address vault;
     address inputToken;
+    /// @dev For SELL, the stablecoin the proceeds are delivered in. Zero for BUY, where the
+    /// output is the registry's own answer for `assetId` and must not be caller-supplied.
+    address outputToken;
+    OrderSide side;
     bytes32 assetId;
     address receiver;
     TriggerType triggerType;

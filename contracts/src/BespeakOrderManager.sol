@@ -14,6 +14,7 @@ import {
     ConditionObservation,
     MarketStatus,
     Order,
+    OrderSide,
     OrderStatus,
     Reason,
     SourceTier,
@@ -26,7 +27,7 @@ import {
 ///
 /// The split this contract exists to enforce (PRD 16): ACTIVE / FILLED / CANCELLED /
 /// EXPIRED are the only states that decide whether capital may still be spent, and they
-/// live here. Everything the keeper and UI call a state — waiting, held, eligible, quoted —
+/// live here. Everything the keeper and UI call a state, waiting, held, eligible, quoted :
 /// is a projection computed off-chain from `checkExecution`, and no database row can make
 /// an inactive order spendable.
 contract BespeakOrderManager is Ownable, ReentrancyGuard {
@@ -106,6 +107,11 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
         uint32 occurrenceIndex
     );
 
+    /// @notice Which way an order trades, and for SELL the stablecoin the proceeds land in.
+    /// @dev A separate event rather than two more fields on OrderCreated, so a consumer
+    /// built against v1 reads v1.1 without a change and learns the direction by opting in.
+    event OrderDirection(bytes32 indexed orderId, OrderSide side, address outputToken);
+
     event OrderCancelled(bytes32 indexed orderId, address indexed by, uint256 releasedAmount);
     event OrderExpired(bytes32 indexed orderId, uint256 releasedAmount);
 
@@ -183,6 +189,12 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
     error ExecutionRefused(Reason reason);
     error NotExpiredYet();
     error RecurringNotActive();
+    /// @dev A SELL whose input is not the asset the registry holds for `assetId`. Selling
+    /// something that merely claims to be the asset is the one way a sell could deliver a
+    /// user's capital to a token nobody vetted.
+    error SellInputNotRegisteredAsset(address given, address expected);
+    /// @dev A SELL whose proceeds token is not an allowlisted stablecoin.
+    error UnsupportedOutputToken(address token);
 
     modifier onlyKeeper() {
         if (!isKeeper[msg.sender]) revert NotKeeper();
@@ -199,7 +211,7 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
     // ---------------------------------------------------------------- admin
     // Admin may pause an asset, repoint infrastructure and manage keepers. Admin may NOT
     // withdraw user funds, redirect a receiver, alter an order, loosen a limit or execute
-    // an expired order — there is no function here that does any of those (PRD 44).
+    // an expired order, there is no function here that does any of those (PRD 44).
 
     function setKeeper(address keeper, bool allowed) external onlyOwner {
         isKeeper[keeper] = allowed;
@@ -241,6 +253,10 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
 
     struct CreateOrderParams {
         address inputToken;
+        /// @dev SELL only: the stablecoin to be delivered. Ignored and stored as zero for
+        /// BUY, where the registry decides the output.
+        address outputToken;
+        OrderSide side;
         bytes32 assetId;
         address receiver;
         TriggerType triggerType;
@@ -340,7 +356,7 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
     ///
     /// @dev Uses the condition source's read-only `peek`. A source that cannot verify in a
     /// view context reports `valid == false`, which surfaces here as
-    /// CONDITION_SOURCE_UNAVAILABLE — a limit of the simulation, not a market conclusion.
+    /// CONDITION_SOURCE_UNAVAILABLE, a limit of the simulation, not a market conclusion.
     function checkExecution(bytes32 orderId, ExecutionRequest calldata req)
         external
         view
@@ -420,7 +436,7 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
     ///
     /// Ordering matters here. The order is marked FILLED before any external call, so a
     /// reentrant second invocation finds a non-ACTIVE order and is refused (INV-02). If the
-    /// router call reverts, the whole transaction reverts and the order remains ACTIVE — a
+    /// router call reverts, the whole transaction reverts and the order remains ACTIVE, a
     /// failed attempt never consumes the order (PRD 45).
     function execute(bytes32 orderId, ExecutionRequest calldata req)
         external
@@ -443,7 +459,11 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
         if (reason != Reason.OK) revert ExecutionRefused(reason);
 
         ExecutionOutcome memory out;
-        out.outputToken = assetRegistry.outputToken(o.assetId);
+        // The only line in the execution path that direction changes. A BUY delivers what
+        // the registry says the asset is; a SELL delivers the stablecoin the order fixed at
+        // creation, which was checked against the allowlist then and cannot have moved since.
+        out.outputToken =
+            o.side == OrderSide.BUY ? assetRegistry.outputToken(o.assetId) : o.outputToken;
 
         // Effects before interactions.
         o.status = OrderStatus.FILLED;
@@ -611,6 +631,12 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
 
         CreateOrderParams memory params = CreateOrderParams({
             inputToken: r.inputToken,
+            // Recurring series are BUY only in v1.1. A scheduled exit is a real instrument
+            // and a different one: it has to reason about how much of a position is left,
+            // which a schedule that only ever spends a stablecoin never has to do. Stating
+            // it here rather than half-supporting it.
+            outputToken: address(0),
+            side: OrderSide.BUY,
             assetId: r.assetId,
             receiver: r.receiver,
             triggerType: r.occurrenceTrigger,
@@ -638,11 +664,28 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
         bytes32 recurringId,
         uint32 occurrenceIndex
     ) internal returns (bytes32 orderId) {
-        if (!isSupportedInputToken[p.inputToken]) revert UnsupportedInputToken(p.inputToken);
         if (p.amountIn == 0) revert InvalidAmount();
         if (p.receiver == address(0)) revert InvalidReceiver();
         if (p.expiresAt <= block.timestamp) revert InvalidExpiry();
         if (!assetRegistry.isKnown(p.assetId)) revert AssetRegistry.UnknownAsset(p.assetId);
+
+        // Direction decides which side of the pair the caller is allowed to name, and the
+        // registry, never the caller, supplies the other side. A BUY may not choose what
+        // it receives and a SELL may not choose what it sells, which is what keeps both
+        // directions pointed at the same vetted asset.
+        address resolvedOutput;
+        if (p.side == OrderSide.BUY) {
+            if (!isSupportedInputToken[p.inputToken]) revert UnsupportedInputToken(p.inputToken);
+        } else {
+            address registered = assetRegistry.outputToken(p.assetId);
+            if (p.inputToken != registered) {
+                revert SellInputNotRegisteredAsset(p.inputToken, registered);
+            }
+            // The proceeds token reuses the stablecoin allowlist: the set of tokens Bespeak
+            // will take payment in is exactly the set it will pay out in.
+            if (!isSupportedInputToken[p.outputToken]) revert UnsupportedOutputToken(p.outputToken);
+            resolvedOutput = p.outputToken;
+        }
 
         address vault = vaultFactory.vaultOf(owner);
         if (vault == address(0)) revert NoVault(owner);
@@ -657,6 +700,8 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
         o.owner = owner;
         o.vault = vault;
         o.inputToken = p.inputToken;
+        o.outputToken = resolvedOutput;
+        o.side = p.side;
         o.assetId = p.assetId;
         o.receiver = p.receiver;
         o.triggerType = p.triggerType;
@@ -677,6 +722,10 @@ contract BespeakOrderManager is Ownable, ReentrancyGuard {
         _allOrders.push(orderId);
 
         BespeakVault(vault).reserve(orderId, p.inputToken, p.amountIn);
+
+        // Emitted separately rather than widened into OrderCreated, so anything already
+        // indexing v1's event keeps working against v1.1 unchanged.
+        emit OrderDirection(orderId, p.side, resolvedOutput);
 
         emit OrderCreated(
             orderId,

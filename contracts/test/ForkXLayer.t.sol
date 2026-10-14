@@ -10,7 +10,7 @@ import {BespeakVaultFactory} from "../src/BespeakVaultFactory.sol";
 import {BespeakOrderManager} from "../src/BespeakOrderManager.sol";
 import {OkxExecutionAdapter} from "../src/OkxExecutionAdapter.sol";
 import {AttestedSessionVerifier} from "../src/AttestedSessionVerifier.sol";
-import {AssetStatus, MarketStatus, OrderStatus, SourceTier, TriggerType} from "../src/BespeakTypes.sol";
+import {AssetStatus, MarketStatus, OrderSide, OrderStatus, SourceTier, TriggerType} from "../src/BespeakTypes.sol";
 
 interface IERC4626Like {
     function asset() external view returns (address);
@@ -155,6 +155,8 @@ contract ForkXLayerTest is Test {
         bytes32 orderId = manager.createOrder(
             BespeakOrderManager.CreateOrderParams({
                 inputToken: USDC,
+                outputToken: address(0),
+                side: OrderSide.BUY,
                 assetId: ASSET_NVDA,
                 receiver: user,
                 triggerType: TriggerType.NEXT_REGULAR_SESSION,
@@ -207,6 +209,8 @@ contract ForkXLayerTest is Test {
         bytes32 orderId = manager.createOrder(
             BespeakOrderManager.CreateOrderParams({
                 inputToken: USDC,
+                outputToken: address(0),
+                side: OrderSide.BUY,
                 assetId: ASSET_NVDA,
                 receiver: user,
                 triggerType: TriggerType.NEXT_REGULAR_SESSION,
@@ -263,6 +267,8 @@ contract ForkXLayerTest is Test {
         bytes32 orderId = manager.createOrder(
             BespeakOrderManager.CreateOrderParams({
                 inputToken: USDG,
+                outputToken: address(0),
+                side: OrderSide.BUY,
                 assetId: ASSET_NVDA,
                 receiver: user,
                 triggerType: TriggerType.IMMEDIATE,

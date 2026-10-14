@@ -17,6 +17,17 @@ export const TriggerType = {
 } as const;
 export type TriggerType = (typeof TriggerType)[keyof typeof TriggerType];
 
+/// Which way an order trades the asset it names (v1.1).
+///
+/// BUY spends a supported stablecoin and delivers the registered xStock. SELL spends the
+/// registered xStock and delivers a supported stablecoin. Both run the identical condition
+/// ladder and the identical postconditions.
+export const OrderSide = {
+  BUY: 0,
+  SELL: 1,
+} as const;
+export type OrderSide = (typeof OrderSide)[keyof typeof OrderSide];
+
 export const AssetStatus = {
   DISCOVERED: 0,
   SUPPORTED: 1,

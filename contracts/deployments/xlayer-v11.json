@@ -1,0 +1,12 @@
+{
+  "version": "1.1",
+  "chainId": 196,
+  "deployer": "0x1661A6D4D25123aFbbbBBCF3805ADd4c3161F088",
+  "assetRegistry": "0x462A8DF4b4e09E8A2B346E40A14c5b47c1eA1728",
+  "routerRegistry": "0xe8909CE9f80264F253aBE8eA50606a04C4a696c0",
+  "conditionVerifier": "0x0A558281bC3d40f59E31aD18EE0f01A5289dB7b6",
+  "orderManager": "0xF803E6CA20D878e72694f6a9b2fB6D0dDF06BC43",
+  "vaultFactory": "0xf4a987531b01C88E05442fe8aa228E3E6ed1A3c8",
+  "executionAdapter": "0xA6DE5fdF38619BBc51d198bE7724795B9Ca29F47",
+  "note": "Sell side. Deployed beside v1; v1 remains live and is the deployment the 28 Sep fill was executed on."
+}
