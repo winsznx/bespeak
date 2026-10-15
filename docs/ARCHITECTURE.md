@@ -31,8 +31,8 @@ boundary sits where it does.
 ```
 
 Off-chain there are exactly two long-running concerns, a keeper that proposes executions
-and a verifier that judges them, plus a Next.js app. There is no indexer database in the
-authority path, by design (see *No hidden authority* below).
+and a verifier that judges them, plus a Next.js app and an MCP server. There is no indexer
+database in the authority path, by design (see *No hidden authority* below).
 
 ---
 
@@ -109,6 +109,43 @@ Outcomes: `VERIFIED_FILLED` when everything holds, `CONTRADICTED` when observed 
 disagrees with the receipt, `ROLLED_BACK` on reorg, `PARTIALLY_VERIFIED` below the
 confirmation policy, and `OUTCOME_UNKNOWN` / `VERIFICATION_TIMEOUT` when it simply cannot
 establish the answer. Nothing upgrades silently.
+
+---
+
+## The agent surface holds no key
+
+```
+ agent's own wallet ──────────── signs ────────────┐
+     │                                             │
+     │ tools/call build_order                      ▼
+     ▼                                      BespeakOrderManager
+ bespeak-mcp  ──► reads chain + /api/* ──►  (unchanged, same contracts)
+     │
+     └── returns UNSIGNED calldata. Never a key, never a signature, never custody.
+```
+
+`services/mcp-worker` exposes six tools over streamable HTTP, JSON-RPC 2.0, protocol
+`2025-06-18`: `list_assets`, `market_state`, `spread`, `build_order`, `order_status`,
+`receipt`.
+
+The design rule is the same one the vault follows. The vault cannot be spent from except
+by an order its owner created; the MCP server cannot act at all. `build_order` returns an
+ordered list of unsigned transactions for the caller's own signer, and the server holds no
+private key, so there is nothing for it to leak and nothing it can move. That is why it is
+safe to expose publicly with no authentication, and why no new trust boundary is introduced
+by having it: an agent using these tools has exactly the authority its own wallet has, no
+more.
+
+Two smaller choices follow from the same principle. `order_status` returns raw ABI-encoded
+output rather than a decoded object, so the caller decodes against the contract's own ABI
+instead of trusting this server's reading of it. And the tool descriptions carry the
+limitations rather than only the responses, because a model that learns a limit after
+acting has already acted: `receipt` states in its own description that only
+`VERIFIED_FILLED` means a completed purchase, and that an absent receipt means an order has
+not executed, which is not the same as having failed.
+
+The server reads through Bespeak's own public HTTP API rather than reaching past it, so
+anything an agent can see is something a human can see too, at a URL they can check.
 
 ---
 
